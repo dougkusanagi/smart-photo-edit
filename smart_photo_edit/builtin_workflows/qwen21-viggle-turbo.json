@@ -1,0 +1,256 @@
+{
+  "format": "smart-photo-edit/workflow@1",
+  "name": "Qwen-Image 2.1 · Viggle Turbo (6 passos)",
+  "description": "Qwen-Image 2.1 int8 com a LoRA Viggle Turbo v0.3: edição por instrução em 6 passos, sem CFG. Rápido e leve. Licença da LoRA: uso não comercial.",
+  "requires": {
+    "custom_nodes": [
+      {
+        "name": "viggle_turbo.py",
+        "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/main/comfyui/viggle_turbo.py"
+      }
+    ],
+    "models": [
+      {
+        "folder": "loras",
+        "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
+        "size_mb": 680,
+        "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/main/Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors"
+      },
+      {
+        "folder": "diffusion_models",
+        "filename": "qwen_image_2.1_int8_convrot.safetensors"
+      },
+      {
+        "folder": "text_encoders",
+        "filename": "qwen3vl_8b_int8_convrot.safetensors"
+      },
+      {
+        "folder": "vae",
+        "filename": "qwen_image_2.1_vae_bf16.safetensors"
+      }
+    ]
+  },
+  "bindings": {
+    "image": [
+      "6",
+      "image"
+    ],
+    "prompt": [
+      "7",
+      "prompt"
+    ],
+    "seed": [
+      "9",
+      "noise_seed"
+    ]
+  },
+  "params": [
+    {
+      "key": "resolution",
+      "label": "Resolução",
+      "type": "choice",
+      "default": 1024,
+      "hint": "Tamanho aproximado do lado da imagem processada. Menor = mais rápido e usa menos VRAM.",
+      "options": [
+        {
+          "label": "Rápida · 768",
+          "value": 768
+        },
+        {
+          "label": "Padrão · 1024",
+          "value": 1024
+        },
+        {
+          "label": "Alta · 1280",
+          "value": 1280
+        }
+      ],
+      "bind": [
+        [
+          "7",
+          "resolution"
+        ]
+      ]
+    },
+    {
+      "key": "schedule",
+      "label": "Passos",
+      "type": "choice",
+      "default": "1.0, 0.9375, 0.875, 0.75, 0.5, 0.25",
+      "hint": "6 é o recomendado pelo autor da LoRA. Menos passos = mais rápido; mais passos = mais detalhe.",
+      "options": [
+        {
+          "label": "5 · mais rápido",
+          "value": "1.0, 0.875, 0.75, 0.5, 0.25"
+        },
+        {
+          "label": "6 · recomendado",
+          "value": "1.0, 0.9375, 0.875, 0.75, 0.5, 0.25"
+        },
+        {
+          "label": "7 · mais detalhe",
+          "value": "1.0, 0.9583, 0.9167, 0.875, 0.75, 0.5, 0.25"
+        }
+      ],
+      "bind": [
+        [
+          "11",
+          "nodes"
+        ]
+      ]
+    }
+  ],
+  "prompt": {
+    "1": {
+      "class_type": "UNETLoader",
+      "inputs": {
+        "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      }
+    },
+    "2": {
+      "class_type": "ViggleTurboLora",
+      "inputs": {
+        "model": [
+          "1",
+          0
+        ],
+        "lora_name": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
+        "strength": 1.0
+      }
+    },
+    "3": {
+      "class_type": "QwenImage21Cache",
+      "inputs": {
+        "model": [
+          "2",
+          0
+        ],
+        "device": "auto",
+        "dtype": "default"
+      }
+    },
+    "4": {
+      "class_type": "CLIPLoader",
+      "inputs": {
+        "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+        "type": "qwen_image",
+        "device": "default"
+      }
+    },
+    "5": {
+      "class_type": "VAELoader",
+      "inputs": {
+        "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+      }
+    },
+    "6": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "example.png"
+      }
+    },
+    "7": {
+      "class_type": "TextEncodeQwenImage21",
+      "inputs": {
+        "clip": [
+          "4",
+          0
+        ],
+        "prompt": "",
+        "negative_prompt": "",
+        "vae": [
+          "5",
+          0
+        ],
+        "resolution": 1024,
+        "images.image_1": [
+          "6",
+          0
+        ]
+      }
+    },
+    "8": {
+      "class_type": "BasicGuider",
+      "inputs": {
+        "model": [
+          "3",
+          0
+        ],
+        "conditioning": [
+          "7",
+          0
+        ]
+      }
+    },
+    "9": {
+      "class_type": "RandomNoise",
+      "inputs": {
+        "noise_seed": 0
+      }
+    },
+    "10": {
+      "class_type": "KSamplerSelect",
+      "inputs": {
+        "sampler_name": "euler"
+      }
+    },
+    "11": {
+      "class_type": "ViggleTurboSigmas",
+      "inputs": {
+        "latent": [
+          "7",
+          2
+        ],
+        "nodes": "1.0, 0.9375, 0.875, 0.75, 0.5, 0.25"
+      }
+    },
+    "12": {
+      "class_type": "SamplerCustomAdvanced",
+      "inputs": {
+        "noise": [
+          "9",
+          0
+        ],
+        "guider": [
+          "8",
+          0
+        ],
+        "sampler": [
+          "10",
+          0
+        ],
+        "sigmas": [
+          "11",
+          0
+        ],
+        "latent_image": [
+          "7",
+          2
+        ]
+      }
+    },
+    "13": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "12",
+          0
+        ],
+        "vae": [
+          "5",
+          0
+        ]
+      }
+    },
+    "14": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "13",
+          0
+        ]
+      }
+    }
+  }
+}

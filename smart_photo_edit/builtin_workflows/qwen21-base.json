@@ -1,0 +1,179 @@
+{
+  "format": "smart-photo-edit/workflow@1",
+  "name": "Qwen-Image 2.1 · Base (25 passos)",
+  "description": "Qwen-Image 2.1 int8 sem LoRA, 25 passos. Mais lento; serve de referência de qualidade e usa só os modelos base.",
+  "requires": {
+    "custom_nodes": [],
+    "models": [
+      {
+        "folder": "diffusion_models",
+        "filename": "qwen_image_2.1_int8_convrot.safetensors"
+      },
+      {
+        "folder": "text_encoders",
+        "filename": "qwen3vl_8b_int8_convrot.safetensors"
+      },
+      {
+        "folder": "vae",
+        "filename": "qwen_image_2.1_vae_bf16.safetensors"
+      }
+    ]
+  },
+  "bindings": {
+    "image": [
+      "4",
+      "image"
+    ],
+    "prompt": [
+      "5",
+      "prompt"
+    ],
+    "seed": [
+      "6",
+      "seed"
+    ]
+  },
+  "params": [
+    {
+      "key": "resolution",
+      "label": "Resolução",
+      "type": "choice",
+      "default": 1024,
+      "hint": "Tamanho aproximado do lado da imagem processada. Menor = mais rápido e usa menos VRAM.",
+      "options": [
+        {
+          "label": "Rápida · 768",
+          "value": 768
+        },
+        {
+          "label": "Padrão · 1024",
+          "value": 1024
+        },
+        {
+          "label": "Alta · 1280",
+          "value": 1280
+        }
+      ],
+      "bind": [
+        [
+          "5",
+          "resolution"
+        ]
+      ]
+    },
+    {
+      "key": "steps",
+      "label": "Passos",
+      "type": "number",
+      "default": 25,
+      "min": 8,
+      "max": 40,
+      "step": 1,
+      "hint": "Mais passos = mais lento, com ganhos pequenos acima de ~25.",
+      "bind": [
+        [
+          "6",
+          "steps"
+        ]
+      ]
+    }
+  ],
+  "prompt": {
+    "1": {
+      "class_type": "UNETLoader",
+      "inputs": {
+        "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      }
+    },
+    "2": {
+      "class_type": "CLIPLoader",
+      "inputs": {
+        "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+        "type": "qwen_image",
+        "device": "default"
+      }
+    },
+    "3": {
+      "class_type": "VAELoader",
+      "inputs": {
+        "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+      }
+    },
+    "4": {
+      "class_type": "LoadImage",
+      "inputs": {
+        "image": "example.png"
+      }
+    },
+    "5": {
+      "class_type": "TextEncodeQwenImage21",
+      "inputs": {
+        "clip": [
+          "2",
+          0
+        ],
+        "prompt": "",
+        "negative_prompt": "",
+        "vae": [
+          "3",
+          0
+        ],
+        "resolution": 1024,
+        "images.image_1": [
+          "4",
+          0
+        ]
+      }
+    },
+    "6": {
+      "class_type": "KSampler",
+      "inputs": {
+        "seed": 0,
+        "steps": 25,
+        "cfg": 1.0,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1.0,
+        "model": [
+          "1",
+          0
+        ],
+        "positive": [
+          "5",
+          0
+        ],
+        "negative": [
+          "5",
+          1
+        ],
+        "latent_image": [
+          "5",
+          2
+        ]
+      }
+    },
+    "7": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "6",
+          0
+        ],
+        "vae": [
+          "3",
+          0
+        ]
+      }
+    },
+    "8": {
+      "class_type": "PreviewImage",
+      "inputs": {
+        "images": [
+          "7",
+          0
+        ]
+      }
+    }
+  }
+}
