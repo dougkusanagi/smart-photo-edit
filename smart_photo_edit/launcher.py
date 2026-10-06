@@ -34,7 +34,12 @@ class ComfyLauncher:
     def start(self, command: str, cwd: str = "") -> None:
         if self.state == "running":
             return
-        argv = split_command(command)
+        self.start_argv(split_command(command), cwd)
+
+    def start_argv(self, argv: list[str], cwd: str = "") -> None:
+        if self.state == "running":
+            return
+        self._close_log()
         if not argv:
             raise ValueError("Nenhum comando configurado para iniciar o ComfyUI.")
         workdir = Path(cwd).expanduser() if cwd else None
@@ -61,6 +66,7 @@ class ComfyLauncher:
                 self.proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 self.proc.kill()
+                self.proc.wait(timeout=10)
         self.proc = None
         self._close_log()
 

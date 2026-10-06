@@ -9,7 +9,7 @@ APP_DIR_NAME = "smart-photo-edit"
 
 
 def user_data_dir() -> Path:
-    """Onde ficam configuração, workflows importados e resultados temporários.
+    """Onde ficam configuração, workflows importados e histórico de edições.
 
     Pode ser sobrescrito com a variável SPE_HOME (útil em testes e instalações portáteis).
     """

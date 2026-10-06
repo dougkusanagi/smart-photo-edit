@@ -18,7 +18,7 @@ def test_builtins_load_and_bind():
     assert {"qwen21-viggle-turbo", "qwen21-base"} <= set(wfs)
     wf = wfs["qwen21-viggle-turbo"]
     assert set(wf.bindings) == {"image", "prompt", "seed"}
-    assert wf.supports == {"negative": False, "strength": False, "seed": True}
+    assert wf.supports == {"negative": False, "strength": False, "seed": True, "reference": True}
 
 
 def test_apply_injects_values_without_mutating_original():

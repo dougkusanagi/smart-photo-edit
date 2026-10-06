@@ -33,7 +33,7 @@ from __future__ import annotations
 import copy
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, field
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -99,10 +99,12 @@ class Workflow:
     requires: dict[str, list[dict[str, Any]]]
     strength_range: tuple[float, float] = (0.0, 1.0)
     path: Path | None = None
+    runtime_args: list[str] = field(default_factory=list)
 
     @property
     def supports(self) -> dict[str, bool]:
-        return {k: k in self.bindings for k in ("negative", "strength", "seed")}
+        return {**{k: k in self.bindings for k in ("negative", "strength", "seed")},
+                "reference": self.source == 'builtin' and any('images.image_1' in n['inputs'] for n in self.graph.values())}
 
     def to_public(self, active: bool = False) -> dict[str, Any]:
         return {
@@ -129,6 +131,7 @@ class Workflow:
         *,
         image_name: str,
         prompt: str,
+        reference_name: str | None = None,
         negative: str = "",
         seed: int | None = None,
         strength: float | None = None,
@@ -142,6 +145,13 @@ class Workflow:
                 graph[node_id]["inputs"][name] = value
 
         put(self.bindings["image"], image_name)
+        if reference_name:
+            if not self.supports['reference']:
+                raise WorkflowError('Este workflow não suporta uma segunda referência.')
+            graph['_spe_reference'] = {'class_type': 'LoadImage', 'inputs': {'image': reference_name}}
+            for node in graph.values():
+                if 'images.image_1' in node['inputs']:
+                    node['inputs']['images.image_2'] = ['_spe_reference', 0]
         put(self.bindings["prompt"], prompt)
         if "negative" in self.bindings:
             put(self.bindings["negative"], negative)

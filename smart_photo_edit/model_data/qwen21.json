@@ -1,0 +1,181 @@
+{
+  "images": {
+    "image_int8": {
+      "folder": "diffusion_models",
+      "filename": "qwen_image_2.1_int8_convrot.safetensors",
+      "size_bytes": 7256783064,
+      "sha256": "cb74113cb03faecd79611b01fd7fd642f0aa60d6f0b95086abee214d75eaa57d",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/diffusion_models/qwen_image_2.1_int8_convrot.safetensors",
+      "label": "INT8 · 7,26 GB",
+      "format": "native",
+      "workflows": [
+        "qwen21-base",
+        "qwen21-viggle-turbo"
+      ],
+      "merged": false
+    },
+    "turbo_q4_k_m": {
+      "folder": "unet",
+      "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q4_K_M.gguf",
+      "size_bytes": 4335931552,
+      "sha256": "047dd62db7c7a55e6bb796e89710cb31457e3b944e0f5f94d0ebe71d1b9c8cae",
+      "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q4_K_M.gguf",
+      "label": "GGUF Q4_K_M · 4,34 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-viggle-turbo"
+      ],
+      "merged": true
+    },
+    "turbo_q5_k_m": {
+      "folder": "unet",
+      "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q5_K_M.gguf",
+      "size_bytes": 5141237920,
+      "sha256": "36429b9176b230a84e50587b20d5c05fa93e58d2b602eb48b5ed2fcf75092be9",
+      "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q5_K_M.gguf",
+      "label": "GGUF Q5_K_M · 5,14 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-viggle-turbo"
+      ],
+      "merged": true
+    },
+    "turbo_q6_k": {
+      "folder": "unet",
+      "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q6_K.gguf",
+      "size_bytes": 5996875936,
+      "sha256": "3f90a114f51a47b2ac5a371075a904069914218d3c2def799fc8d82641b79625",
+      "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q6_K.gguf",
+      "label": "GGUF Q6_K · 6,00 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-viggle-turbo"
+      ],
+      "merged": true
+    },
+    "turbo_q8_0": {
+      "folder": "unet",
+      "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q8_0.gguf",
+      "size_bytes": 7687180448,
+      "sha256": "f3aaa3a00da202b1295bb2cb8dae0b15172c1e26aaeb805cdc1e4755bd94d64f",
+      "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-Q8_0.gguf",
+      "label": "GGUF Q8_0 · 7,69 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-viggle-turbo"
+      ],
+      "merged": true
+    },
+    "base_q4_k": {
+      "folder": "unet",
+      "filename": "qwen_image_2.1-Q4_K.gguf",
+      "size_bytes": 4197494816,
+      "sha256": "29f9c83c249ff0292fb2943fceddfa2319b446601866c82a4f8be062abea72c2",
+      "url": "https://huggingface.co/leejet/Qwen-Image-2.1-GGUF/resolve/cc11433936a06e9765f7c0c0b1f0436cfd2b9856/qwen_image_2.1-Q4_K.gguf",
+      "label": "GGUF Q4_K · 4,20 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-base"
+      ],
+      "merged": false
+    },
+    "base_q5_0": {
+      "folder": "unet",
+      "filename": "qwen_image_2.1-Q5_0.gguf",
+      "size_bytes": 5069910048,
+      "sha256": "8dfeb1ee091a5d7c7d8191f69723254f031de8fe67ec219a21bf7df57590ab43",
+      "url": "https://huggingface.co/leejet/Qwen-Image-2.1-GGUF/resolve/cc11433936a06e9765f7c0c0b1f0436cfd2b9856/qwen_image_2.1-Q5_0.gguf",
+      "label": "GGUF Q5_0 · 5,07 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-base"
+      ],
+      "merged": false
+    },
+    "base_q6_k": {
+      "folder": "unet",
+      "filename": "qwen_image_2.1-Q6_K.gguf",
+      "size_bytes": 5996851232,
+      "sha256": "1c51d1a8e6cf2b215719dea0c4f0f4cbfff9214a1c7571e57913f57d6a9c3c12",
+      "url": "https://huggingface.co/leejet/Qwen-Image-2.1-GGUF/resolve/cc11433936a06e9765f7c0c0b1f0436cfd2b9856/qwen_image_2.1-Q6_K.gguf",
+      "label": "GGUF Q6_K · 6,00 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-base"
+      ],
+      "merged": false
+    },
+    "base_q8_0": {
+      "folder": "unet",
+      "filename": "qwen_image_2.1-Q8_0.gguf",
+      "size_bytes": 7687155744,
+      "sha256": "f8b244b00937f0e444a40dbf7866460871b89b30142594973b6012d1b471dc0a",
+      "url": "https://huggingface.co/leejet/Qwen-Image-2.1-GGUF/resolve/cc11433936a06e9765f7c0c0b1f0436cfd2b9856/qwen_image_2.1-Q8_0.gguf",
+      "label": "GGUF Q8_0 · 7,69 GB",
+      "format": "gguf",
+      "workflows": [
+        "qwen21-base"
+      ],
+      "merged": false
+    }
+  },
+  "encoders": {
+    "int8": {
+      "folder": "text_encoders",
+      "filename": "qwen3vl_8b_int8_convrot.safetensors",
+      "size_bytes": 9350798360,
+      "sha256": "8bfd0f6e12abf2d2d697ecc888e5e90b0d6741d6708f05799f53afa560452e8f",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/text_encoders/qwen3vl_8b_int8_convrot.safetensors",
+      "label": "Qwen3-VL 8B INT8 · 9,35 GB"
+    },
+    "w4a8": {
+      "folder": "text_encoders",
+      "filename": "qwen3vl_8b_w4a8.safetensors",
+      "size_bytes": 6312105364,
+      "sha256": "7754425e55e7bea2bfde4dde59a4cc236cb44e5ee9c215ea66ef8d47012824eb",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/text_encoders/qwen3vl_8b_w4a8.safetensors",
+      "label": "Qwen3-VL 8B W4A8 · 6,31 GB"
+    },
+    "q3_k_m": {
+      "folder": "text_encoders/spe-qwen3vl-8b",
+      "filename": "Qwen3-VL-8B-Instruct-Q3_K_M.gguf",
+      "size_bytes": 4124162912,
+      "sha256": "44d2eb1ed1e96f8848a9b18c732a9e34467ea7110003c475c7b495174fb18c4c",
+      "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/Qwen3-VL-8B-Instruct-Q3_K_M.gguf",
+      "label": "Qwen3-VL 8B GGUF Q3_K_M · 4,12 GB + visão",
+      "format": "gguf",
+      "experimental": true
+    },
+    "q4_k_m": {
+      "folder": "text_encoders/spe-qwen3vl-8b",
+      "filename": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
+      "size_bytes": 5027785568,
+      "sha256": "108e7ff92b78eefd3db4741885104acba514255c11b617d3c7b197a5f46efe89",
+      "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
+      "label": "Qwen3-VL 8B GGUF Q4_K_M · 5,03 GB + visão",
+      "format": "gguf",
+      "experimental": true
+    }
+  },
+  "vae": {
+    "folder": "vae",
+    "filename": "qwen_image_2.1_vae_bf16.safetensors",
+    "size_bytes": 675509688,
+    "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9",
+    "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/vae/qwen_image_2.1_vae_bf16.safetensors"
+  },
+  "lora": {
+    "folder": "loras",
+    "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
+    "size_bytes": 679604800,
+    "sha256": "0c98591700346f9777051d4e6fa29aa94519abec0d85b1f1f672a2a3db8c94b3",
+    "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors"
+  },
+  "vision": {
+    "folder": "text_encoders/spe-qwen3vl-8b",
+    "filename": "mmproj-Qwen3-VL-8B-Instruct-F16.gguf",
+    "size_bytes": 1159030336,
+    "sha256": "d406d03ebabefdef86a2c86bf0c1b65f9e046f7a81c218f25de4931b46a07fc4",
+    "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/mmproj-F16.gguf"
+  }
+}

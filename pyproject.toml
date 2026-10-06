@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Editor de imagens com IA: interface local que roda workflows do ComfyUI (Qwen-Image 2.1)."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["aiohttp>=3.9"]
+dependencies = ["aiohttp>=3.9", "pillow>=10"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.23", "pillow"]
@@ -20,7 +20,7 @@ smart-photo-edit = "smart_photo_edit.cli:main"
 include = ["smart_photo_edit*"]
 
 [tool.setuptools.package-data]
-smart_photo_edit = ["web/*", "builtin_workflows/*.json"]
+smart_photo_edit = ["web/*", "builtin_workflows/*.json", "model_data/*.json", "engine_nodes/*.py"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

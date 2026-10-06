@@ -25,7 +25,7 @@ async def make_env(tmp_path):
         comfy = FakeComfy(**comfy_kwargs)
         comfy_srv = TestServer(comfy.app)
         await comfy_srv.start_server()
-        settings = config.Settings(comfy_url=f"http://127.0.0.1:{comfy_srv.port}")
+        settings = config.Settings(engine_mode="external", comfy_url=f"http://127.0.0.1:{comfy_srv.port}")
         state = AppState(settings=settings, store=ResultStore(tmp_path / "results"), config_path=tmp_path / "cfg.json")
         client = TestClient(TestServer(create_app(state)))
         await client.start_server()
@@ -61,7 +61,7 @@ async def test_status_and_workflow_list(make_env):
 
 
 async def test_status_offline(make_env, tmp_path):
-    state = AppState(settings=config.Settings(comfy_url="http://127.0.0.1:1"), store=ResultStore(tmp_path / "r"), config_path=tmp_path / "c.json")
+    state = AppState(settings=config.Settings(engine_mode="external", comfy_url="http://127.0.0.1:1"), store=ResultStore(tmp_path / "r"), config_path=tmp_path / "c.json")
     client = TestClient(TestServer(create_app(state)))
     await client.start_server()
     try:
