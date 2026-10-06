@@ -138,12 +138,13 @@ async def import_workflow(request: web.Request) -> web.Response:
 async def delete_workflow(request: web.Request) -> web.Response:
     state: AppState = request.app[STATE_KEY]
     wf_id = request.match_info["id"]
-    if not workflows.delete_user_workflow(wf_id):
+    backup = workflows.delete_user_workflow(wf_id)
+    if backup is None:
         return json_error("Só é possível remover workflows importados.", 404, "not_found")
     if state.settings.workflow == wf_id:
         state.settings.workflow = config.DEFAULT_WORKFLOW
         state.save()
-    return web.json_response({"ok": True})
+    return web.json_response({"ok": True, "backup": backup})
 
 
 async def check_workflow(request: web.Request) -> web.Response:

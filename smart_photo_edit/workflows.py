@@ -369,13 +369,15 @@ def import_text(text: str, filename: str = "") -> Workflow:
     return wf
 
 
-def delete_user_workflow(wf_id: str) -> bool:
+def delete_user_workflow(wf_id: str) -> str | None:
+    """Remove um workflow importado e devolve o conteúdo (para o app oferecer "Desfazer")."""
     wfs, _ = discover()
     wf = wfs.get(wf_id)
     if not wf or wf.source != "user" or not wf.path:
-        return False
+        return None
+    text = wf.path.read_text(encoding="utf-8")
     wf.path.unlink(missing_ok=True)
-    return True
+    return text
 
 
 # ───────────────────────── validação contra o ComfyUI ─────────────────────────

@@ -80,6 +80,9 @@ async def test_edit_end_to_end(make_env, png):
     events = await read_events(resp)
     kinds = [e["type"] for e in events]
     assert kinds[-1] == "done" and "progress" in kinds
+    phases = [e["phase"] for e in events if e["type"] == "progress"]
+    assert not any("5/12" in ph for ph in phases), "progresso do codificador não é passo de amostragem"
+    assert any("passo 3/3" in ph for ph in phases)
     ps = [e["p"] for e in events if e["type"] == "progress"]
     assert ps == sorted(ps) and 0 <= ps[0] and ps[-1] <= 1
     images = events[-1]["images"]
@@ -133,7 +136,7 @@ async def test_cancel_by_disconnect_interrupts_comfy(make_env, png):
 async def test_comfy_execution_error_is_friendly(make_env, png):
     env = await make_env(fail="exec")
     events = await read_events(await env.http.post("/api/edit", data=edit_form(png)))
-    assert events[-1]["type"] == "error" and "memória" in events[-1]["message"]
+    assert events[-1]["type"] == "error" and "memória" in events[-1]["message"] and events[-1]["code"] == "out_of_memory"
 
 
 async def test_invalid_workflow_error_names_the_node(make_env, png):

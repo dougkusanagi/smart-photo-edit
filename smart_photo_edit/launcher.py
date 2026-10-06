@@ -10,9 +10,14 @@ from pathlib import Path
 from . import paths
 
 
-def split_command(command: str) -> list[str]:
+def split_command(command: str, posix: bool | None = None) -> list[str]:
     """Divide a linha de comando respeitando aspas, em Linux e Windows (caminhos com \\)."""
-    return shlex.split(command, posix=(os.name != "nt"))
+    if posix is None:
+        posix = os.name != "nt"
+    parts = shlex.split(command, posix=posix)
+    if not posix:  # no modo Windows o shlex mantém as aspas nos argumentos
+        parts = [p[1:-1] if len(p) > 1 and p[0] == p[-1] and p[0] in "\"'" else p for p in parts]
+    return parts
 
 
 class ComfyLauncher:

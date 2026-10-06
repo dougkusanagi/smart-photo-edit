@@ -75,6 +75,8 @@ class FakeComfy:
 
     async def _execute(self, pid):
         self.running = pid
+        for ws in self.sockets:  # codificador de texto também emite "progress" no ComfyUI real
+            await ws.send_json({"type": "progress", "data": {"value": 5, "max": 12, "prompt_id": pid, "node": "7"}})
         for step in range(1, 4):
             for ws in self.sockets:
                 await ws.send_json({"type": "progress", "data": {"value": step, "max": 3, "prompt_id": pid, "node": "12"}})

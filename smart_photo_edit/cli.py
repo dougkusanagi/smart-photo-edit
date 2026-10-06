@@ -28,7 +28,11 @@ def _serve(args: argparse.Namespace) -> int:
         print("  ⚠ Escutando em todas as interfaces: qualquer pessoa na rede poderá usar sua GPU.")
     if not args.no_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
-    web.run_app(create_app(state), host=args.host, port=args.port, print=None)
+    try:
+        web.run_app(create_app(state), host=args.host, port=args.port, print=None)
+    except OSError as exc:
+        print(f"\nNão consegui abrir {args.host}:{args.port} ({exc.strerror}). Outra instância já está rodando? Tente --port {args.port + 1}.", file=sys.stderr)
+        return 1
     return 0
 
 

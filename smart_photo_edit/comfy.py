@@ -136,6 +136,8 @@ class ComfyClient:
         """Enfileira o grafo e espera terminar. Progresso por WebSocket (opcional); término por /history."""
         total_nodes = max(1, len(graph))
         state = {"done": 0, "sampling": False, "p": 0.0}
+        # só o progresso dos samplers vale como "passo"; codificadores e VAE também emitem `progress`
+        samplers = {nid for nid, n in graph.items() if "Sampler" in n["class_type"] and n["class_type"] != "KSamplerSelect"}
 
         async def emit(p: float, phase: str) -> None:
             state["p"] = max(state["p"], min(1.0, p))
@@ -167,9 +169,12 @@ class ComfyClient:
                             if not state["sampling"]:
                                 await emit(0.18 * min(1.0, state["done"] / total_nodes), "Carregando modelos")
                         elif kind == "progress":
-                            state["sampling"] = True
                             value, mx = data.get("value", 0), max(1, data.get("max", 1))
-                            await emit(0.18 + 0.74 * value / mx, f"Gerando · passo {value}/{mx}")
+                            if str(data.get("node")) in samplers:
+                                state["sampling"] = True
+                                await emit(0.18 + 0.74 * value / mx, f"Gerando · passo {value}/{mx}")
+                            elif not state["sampling"]:
+                                await emit(0.18 * min(1.0, (state["done"] + value / mx) / total_nodes), "Preparando")
             except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
                 return  # sem WebSocket: segue só com /history, só perde o progresso fino
 
@@ -187,7 +192,8 @@ class ComfyClient:
                 if hist:
                     status = hist.get("status", {})
                     if status.get("status_str") == "error":
-                        raise ComfyError(_format_exec_error(status), "execution_error")
+                        msg, code = _format_exec_error(status)
+                        raise ComfyError(msg, code)
                     outputs = hist.get("outputs", {})
                     images = [
                         OutputImage(i["filename"], i.get("subfolder", ""), i.get("type", "output"))
@@ -229,12 +235,18 @@ def _format_queue_error(body: Any) -> str:
     return text
 
 
-def _format_exec_error(status: dict[str, Any]) -> str:
+def _format_exec_error(status: dict[str, Any]) -> tuple[str, str]:
+    """(mensagem, código) a partir do histórico de uma execução que falhou."""
     for kind, data in status.get("messages", []):
         if kind == "execution_error":
             msg = data.get("exception_message", "").strip() or "erro desconhecido"
             node = data.get("node_type") or data.get("node_id")
-            if "out of memory" in msg.lower():
-                return "A GPU ficou sem memória. Tente uma resolução menor nas configurações avançadas."
-            return f"Erro no nó {node}: {msg}"
-    return "O ComfyUI falhou ao executar o workflow."
+            low = msg.lower()
+            if "out of memory" in low or "vram" in low or "allocat" in low:
+                return (
+                    "A GPU ficou sem memória. Feche outros programas que usam a placa de vídeo "
+                    "ou escolha uma resolução menor nas configurações avançadas.",
+                    "out_of_memory",
+                )
+            return f"Erro no nó {node}: {msg}", "execution_error"
+    return "O ComfyUI falhou ao executar o workflow.", "execution_error"

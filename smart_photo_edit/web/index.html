@@ -213,6 +213,11 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 </svg>
 
@@ -223,8 +228,9 @@
     <div class="flex items-center gap-2.5">
       <svg class="ic text-accent" style="width:18px;height:18px"><use href="#i-sparkles"/></svg>
       <span class="hidden text-[13px] font-semibold tracking-[-.012em] md:inline">Smart Photo Edit</span>
-      <span class="inline-flex h-[18px] cursor-default items-center rounded-full bg-line/[.07] px-2 text-[11px] font-medium text-faint"
-            tabindex="0" data-tip="Modo demonstração: as edições são simuladas localmente. O Qwen-Image 2.1 entra no lugar do motor demo." data-tip-pos="bottom">Demo</span>
+      <button id="enginePill" class="inline-flex h-[22px] max-w-[260px] items-center gap-1.5 rounded-full bg-line/[.07] px-2.5 text-[11px] font-medium text-mute hover:bg-line/[.11] hover:text-ink active:scale-95" data-tip="Modo demonstração" data-tip-pos="bottom" aria-label="Abrir configurações avançadas">
+        <span id="engDot" class="h-1.5 w-1.5 shrink-0 rounded-full bg-faint"></span><span id="engLabel" class="truncate">Demo</span>
+      </button>
     </div>
 
     <div id="titleWrap" class="flex min-w-0 flex-col items-center invisible">
@@ -355,7 +361,10 @@
                 <input id="neg" class="field" autocomplete="off" maxlength="120" placeholder="ex.: texto, desfoque, marca d’água">
               </div>
             </div>
-            <div class="mt-4 border-t border-line/[.08] pt-3 text-[11px] text-faint">Qwen-Image 2.1 · Imagem para imagem</div>
+            <div class="mt-4 flex items-center justify-between gap-3 border-t border-line/[.08] pt-3 text-[11px] text-faint">
+              <span id="popWf" class="truncate">Modo demonstração</span>
+              <button id="popAdv" class="shrink-0 rounded-md px-1.5 py-1 font-medium text-mute hover:bg-line/[.08] hover:text-ink">Avançado…</button>
+            </div>
           </div>
         </div>
 
@@ -400,6 +409,61 @@
   </div>
 </div>
 
+<!-- Configurações avançadas -->
+<div id="adv" class="pop fixed inset-0 z-50" data-open="false">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-[3px]" data-close-adv></div>
+  <div class="pop-panel glass relative mx-auto mt-[6vh] flex max-h-[88vh] w-[min(700px,calc(100vw-32px))] flex-col overflow-hidden rounded-[20px]" style="transform-origin:50% 0;--glass-a:.95" role="dialog" aria-modal="true" aria-labelledby="advTitle">
+    <header class="flex h-14 shrink-0 items-center justify-between border-b border-line/[.08] pl-5 pr-3">
+      <h2 id="advTitle" class="text-[15px] font-semibold tracking-[-.012em]">Configurações avançadas</h2>
+      <button id="advClose" class="icon-btn" aria-label="Fechar" data-tip="Fechar" data-keys="Esc"><svg class="ic"><use href="#i-x"/></svg></button>
+    </header>
+    <div class="no-scrollbar space-y-7 overflow-y-auto px-5 py-5">
+
+      <section aria-labelledby="secEngine">
+        <h3 id="secEngine" class="mb-3 text-[13px] font-semibold">Motor · ComfyUI</h3>
+        <label class="label mb-1.5 block" for="advUrl">Endereço</label>
+        <div class="flex items-center gap-2">
+          <input id="advUrl" class="field" inputmode="url" autocomplete="off" spellcheck="false" placeholder="http://127.0.0.1:8188" aria-describedby="advUrlMsg">
+          <button id="advTest" class="btn-quiet !h-9 shrink-0"><svg class="ic"><use href="#i-retry"/></svg>Testar</button>
+        </div>
+        <p id="advUrlMsg" class="mt-1.5 flex min-h-[18px] items-center gap-1.5 text-[12px] text-mute"></p>
+
+        <button id="advLaunchToggle" class="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-mute hover:text-ink" aria-expanded="false" aria-controls="advLaunch">
+          <svg class="ic transition-transform duration-200" style="width:14px;height:14px" id="advChev"><use href="#i-chevron"/></svg>Iniciar o ComfyUI pelo app
+        </button>
+        <div id="advLaunch" class="mt-3 hidden space-y-3 rounded-[14px] bg-line/[.04] p-3.5">
+          <div><label class="label mb-1.5 block" for="advCmd">Comando</label>
+            <input id="advCmd" class="field font-mono !text-[12px]" autocomplete="off" spellcheck="false" placeholder="/caminho/python /caminho/ComfyUI/main.py --port 8188"></div>
+          <div><label class="label mb-1.5 block" for="advCwd">Pasta de trabalho <span class="font-normal text-faint">(opcional)</span></label>
+            <input id="advCwd" class="field font-mono !text-[12px]" autocomplete="off" spellcheck="false" placeholder="/caminho/ComfyUI"></div>
+          <div class="flex items-center justify-between gap-3">
+            <label class="flex items-center gap-2.5 text-[13px]" for="advAuto">
+              <button id="advAuto" role="switch" aria-checked="false" class="relative h-[22px] w-[38px] shrink-0 rounded-full bg-line/[.18] transition-transform aria-checked:bg-accent"><span class="absolute left-0.5 top-0.5 h-[18px] w-[18px] rounded-full bg-white shadow transition-transform duration-200"></span></button>
+              Iniciar junto com o app
+            </label>
+            <button id="advStart" class="btn-quiet !h-8 shrink-0"><svg class="ic"><use href="#i-play"/></svg>Iniciar agora</button>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="secWf">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 id="secWf" class="text-[13px] font-semibold">Workflow</h3>
+          <button id="wfImport" class="btn-quiet !h-7 !px-2.5 !text-[12px]"><svg class="ic" style="width:14px;height:14px"><use href="#i-upload"/></svg>Importar JSON</button>
+          <input id="wfFile" type="file" accept="application/json,.json" hidden>
+        </div>
+        <div id="wfList" role="radiogroup" aria-labelledby="secWf" class="space-y-2"></div>
+        <p class="mt-2.5 text-[11px] leading-relaxed text-faint">Importe um workflow exportado do ComfyUI em <b class="font-medium text-mute">Save (API Format)</b>. O app encontra sozinho onde ficam a imagem, o prompt e a semente. Pasta dos seus workflows: <span id="wfDir" class="select-text font-mono"></span></p>
+      </section>
+
+      <section id="secParams" aria-labelledby="secParamsT" class="hidden">
+        <h3 id="secParamsT" class="mb-3 text-[13px] font-semibold">Parâmetros do workflow</h3>
+        <div id="wfParams" class="space-y-4"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- Soltar arquivo -->
 <div id="dropOverlay" class="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-accent/[.08] opacity-0 transition-opacity duration-200">
   <div class="glass flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-medium"><svg class="ic"><use href="#i-image-plus"/></svg><span id="dropText">Solte para abrir</span></div>
@@ -434,12 +498,12 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const MAX_PROMPT = 500, MAX_BYTES = 20 * 1024 * 1024;
 const DEFAULTS = { strength: 60, n: 1, seed: '', negative: '' };
 const LOOKS = [
-  { label: 'Dourado', prompt: 'Pôr do sol dourado' },
-  { label: 'P&B', prompt: 'Preto e branco' },
-  { label: 'Vintage', prompt: 'Estilo vintage' },
-  { label: 'Vibrante', prompt: 'Mais vibrante' },
-  { label: 'Noite', prompt: 'Noite cinematográfica' },
-  { label: 'Ilustração', prompt: 'Estilo ilustração' },
+  { label: 'Dourado', prompt: 'Pôr do sol dourado', swatch: 'linear-gradient(135deg,#ffb36b,#e8556d)' },
+  { label: 'P&B', prompt: 'Preto e branco', swatch: 'linear-gradient(135deg,#f2f2f2,#3a3a3a)' },
+  { label: 'Vintage', prompt: 'Estilo vintage', swatch: 'linear-gradient(135deg,#e6cfa0,#8a6a43)' },
+  { label: 'Vibrante', prompt: 'Mais vibrante', swatch: 'linear-gradient(135deg,#ff3d9a,#22d3ee)' },
+  { label: 'Noite', prompt: 'Noite cinematográfica', swatch: 'linear-gradient(135deg,#1e2a6b,#0b0b24)' },
+  { label: 'Ilustração', prompt: 'Estilo ilustração', swatch: 'linear-gradient(135deg,#2dd4bf,#facc15)' },
 ];
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem('spe.' + k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem('spe.' + k, JSON.stringify(v)); } catch {} };
@@ -666,7 +730,7 @@ function applyLook(cv, L, s) {
   }
 }
 
-const engine = {
+const demoEngine = {
   name: 'Demo local',
   async edit({ src, prompt, strength, seed, n, onProgress, signal }) {
     const abortable = ms => new Promise((res, rej) => {
@@ -692,6 +756,65 @@ const engine = {
   },
 };
 
+/* ───────────────────────── motor remoto (backend Python + ComfyUI) ───────────────────────── */
+class EngineError extends Error { constructor(message, code = 'error') { super(message); this.code = code; } }
+let engine = demoEngine;
+const R = { remote: false, status: null, workflows: [], active: null, values: {}, userDir: '', checks: {}, errors: {} };
+const activeWf = () => R.workflows.find(w => w.id === R.active);
+const supports = k => !R.remote || activeWf()?.supports?.[k] !== false;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { cache: 'no-store', ...opts });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new EngineError(data.error || `Erro ${res.status}`, data.code || 'error');
+  return data;
+}
+function imageSize(blob) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => { resolve({ w: img.naturalWidth, h: img.naturalHeight }); URL.revokeObjectURL(url); };
+    img.onerror = () => reject(new EngineError('A imagem gerada veio corrompida.'));
+    img.src = url;
+  });
+}
+const remoteEngine = {
+  name: 'ComfyUI',
+  real: true,
+  async edit({ src, prompt, negative, strength, seed, n, onProgress, signal }) {
+    const fd = new FormData();
+    fd.append('image', src.blob, 'image');
+    const opts = { prompt, negative, n, seed: String(seed) };
+    if (supports('strength')) opts.strength = strength;
+    fd.append('options', new Blob([JSON.stringify(opts)], { type: 'application/json' }));
+    let res;
+    try { res = await fetch('/api/edit', { method: 'POST', body: fd, signal }); }
+    catch (e) { if (e.name === 'AbortError') throw e; throw new EngineError('O app local não respondeu. Ele ainda está rodando?', 'app_offline'); }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new EngineError(d.error || `Erro ${res.status}`, d.code || 'error'); }
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = '', done = null;
+    for (;;) {
+      const { value, done: end } = await reader.read();
+      if (value) buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+        if (!line) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === 'progress') onProgress(ev.p, ev.phase);
+        else if (ev.type === 'done') done = ev;
+        else if (ev.type === 'error') throw new EngineError(ev.message, ev.code);
+        else if (ev.type === 'cancelled') throw new DOMException('Aborted', 'AbortError');
+      }
+      if (end) break;
+    }
+    if (!done) throw new EngineError('A conexão com o app foi interrompida antes do fim.', 'stream_cut');
+    return Promise.all(done.images.map(async img => {
+      const blob = await (await fetch(img.url)).blob();
+      return { blob, seed: img.seed, ...(await imageSize(blob)) };
+    }));
+  },
+};
+
 /* ───────────────────────── geração ───────────────────────── */
 const promptEl = $('#prompt');
 async function generate() {
@@ -705,18 +828,22 @@ async function generate() {
   S.busy = { n: st.n, p: 0, ctrl };
   renderBusy();
   try {
-    const res = await engine.edit({ src: base, prompt, negative: st.negative, strength: st.strength / 100, seed, n: st.n, signal: ctrl.signal, onProgress: p => { if (S.busy) { S.busy.p = p; paintProgress(); } } });
+    const res = await engine.edit({ src: base, prompt, negative: st.negative, strength: st.strength / 100, seed, n: st.n, signal: ctrl.signal, onProgress: (p, phase) => { if (S.busy) { S.busy.p = p; S.busy.phase = phase; paintProgress(); } } });
     const add = res.map(r => ({ id: uid(), url: URL.createObjectURL(r.blob), blob: r.blob, w: r.w, h: r.h, prompt, seed: r.seed, kind: 'edit' }));
     S.busy = null;
     const at = S.versions.length, prevSel = S.sel;
     perform({ redo: () => { S.versions.push(...add); S.sel = at; }, undo: () => { S.versions.splice(at, add.length); S.sel = Math.min(prevSel, S.versions.length - 1); } });
-    S.prompts.unshift(prompt); S.promptIdx = -1; S.lastSeed = seed;
+    S.prompts.unshift(prompt); S.promptIdx = -1; S.lastSeed = res[0]?.seed ?? seed;
     promptEl.value = ''; syncPrompt();
     toast({ kind: 'success', text: add.length === 1 ? 'Edição pronta' : `${add.length} variações prontas`, action: { label: 'Desfazer', icon: 'undo', run: undo } });
   } catch (err) {
     S.busy = null; renderBusy();
     if (err.name === 'AbortError') toast({ text: 'Geração cancelada' });
-    else toast({ kind: 'error', text: 'Não foi possível gerar a edição. Tente novamente.', action: { label: 'Tentar novamente', icon: 'retry', run: generate } });
+    else {
+      const needsSetup = ['comfy_offline', 'invalid_workflow', 'launch_failed', 'no_command', 'out_of_memory'].includes(err.code);
+      toast({ kind: 'error', text: err.message && err instanceof EngineError ? err.message : 'Não foi possível gerar a edição. Tente novamente.', duration: 10000,
+        action: needsSetup ? { label: 'Configurar', icon: 'settings', run: () => openAdv() } : { label: 'Tentar novamente', icon: 'retry', run: generate } });
+    }
   }
 }
 function cancelBusy(silent) { if (S.busy) { S.busy.ctrl.abort(); if (silent) { S.busy = null; renderBusy(); } } }
@@ -820,7 +947,7 @@ function renderBusy() {
 }
 function paintProgress() {
   const b = S.busy; if (!b) return;
-  $('#busyText').textContent = `${b.n > 1 ? `Gerando ${b.n} variações` : 'Gerando'} · ${Math.round(b.p * 100)}%`;
+  $('#busyText').textContent = `${b.phase || (b.n > 1 ? `Gerando ${b.n} variações` : 'Gerando')} · ${Math.round(b.p * 100)}%`;
 }
 function syncPrompt() {
   const el = promptEl, has = hasImg(), len = el.value.length, empty = !el.value.trim(), over = len > MAX_PROMPT;
@@ -854,6 +981,10 @@ async function renderLooks() {
   if (looksFor === v.id) return;
   looksFor = v.id;
   wrap.innerHTML = LOOKS.map(l => `<button class="look" data-look="${esc(l.prompt)}" aria-pressed="false" aria-label="${esc(l.prompt)}"><span class="look-img"><img alt="" draggable="false"></span><span class="look-label">${esc(l.label)}</span></button>`).join('');
+  if (engine.real) {  // sem pré-visualização falsa: só amostras de cor
+    $$('#looks .look').forEach((btn, i) => { const box = btn.querySelector('.look-img'); box.style.background = LOOKS[i].swatch; box.innerHTML = `<span class="absolute inset-0 grid place-items-center text-white/90">${icon('sparkles')}</span>`; });
+    return syncPrompt();
+  }
   let img; try { img = await loadImage(v.url); } catch { return; }
   if (looksFor !== v.id) return;
   const W = 176, H = 116, base = document.createElement('canvas'); base.width = W; base.height = H;
@@ -1052,6 +1183,8 @@ const commands = () => {
     { g: 'Edição', label: 'Refazer', icon: 'redo', keys: 'mod+shift+Z', run: redo, on: S.redo.length > 0 },
     { g: 'Edição', label: 'Ajustes de geração', icon: 'sliders', run: () => setTimeout(openPopover, 30), on: has, keep: true },
     ...(has ? LOOKS.map(l => ({ g: 'Looks', label: `Aplicar look: ${l.label}`, icon: 'sparkles', run: () => setPrompt(l.prompt), keep: true })) : []),
+    { g: 'Configurações', label: 'Configurações avançadas…', icon: 'settings', keys: 'mod+,', run: () => openAdv(), keep: true },
+    ...(R.remote ? R.workflows.filter(w => !w.active).map(w => ({ g: 'Configurações', label: `Usar workflow: ${w.name}`, icon: 'sparkles', run: () => selectWorkflow(w.id) })) : []),
     { g: 'Aparência', label: 'Tema automático', icon: 'monitor', run: () => setTheme('auto') },
     { g: 'Aparência', label: 'Tema claro', icon: 'sun', run: () => setTheme('light') },
     { g: 'Aparência', label: 'Tema escuro', icon: 'moon', run: () => setTheme('dark') },
@@ -1100,8 +1233,9 @@ pal.addEventListener('pointerdown', e => { if (e.target.matches('[data-close]'))
 const isTyping = t => t.matches?.('input, textarea, [contenteditable="true"]');
 addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase(), typing = isTyping(e.target);
-  if (mod && k === 'k') { e.preventDefault(); palOpen() ? closePalette() : openPalette(); return; }
-  if (palOpen()) return;
+  if (mod && k === ',') { e.preventDefault(); advOpen() ? closeAdv() : openAdv(); return; }
+  if (mod && k === 'k' && !advOpen()) { e.preventDefault(); palOpen() ? closePalette() : openPalette(); return; }
+  if (palOpen() || advOpen()) return;
   if (mod && k === 'o') { e.preventDefault(); pickFile(); return; }
   if (mod && k === 's') { e.preventDefault(); exportImage(); return; }
   if (mod && e.shiftKey && k === 'c') { e.preventDefault(); copyImage(); return; }
@@ -1128,6 +1262,244 @@ addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragDepth <
 addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
 addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.dataset.drag = 'false'; openFiles(e.dataTransfer.files); });
 
+/* ───────────────────────── configurações avançadas (ComfyUI e workflows) ───────────────────────── */
+const adv = $('#adv');
+let advReturn = null, advSettings = {};
+const advOpen = () => adv.dataset.open === 'true';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const shortName = n => n.split('·').pop().trim();
+
+async function loadWorkflows() {
+  const d = await api('/api/workflows');
+  Object.assign(R, { workflows: d.workflows, active: d.active, values: d.values || {}, errors: d.errors || {}, userDir: d.user_dir });
+}
+async function refreshStatus() {
+  if (!R.remote) return;
+  try { R.status = await api('/api/status'); } catch { R.status = null; }
+  renderEngine(); if (advOpen()) renderAdvStatus();
+}
+async function refreshChecks(ids = R.workflows.map(w => w.id)) {
+  ids.forEach(id => { delete R.checks[id]; }); if (advOpen()) renderWfList();
+  await Promise.all(ids.map(async id => {
+    try { R.checks[id] = await api(`/api/workflows/${id}/check`); } catch { R.checks[id] = { online: false, ok: false, issues: [] }; }
+    if (advOpen()) renderWfList();
+  }));
+}
+
+function renderEngine() {
+  const pill = $('#enginePill'), dot = $('#engDot'), label = $('#engLabel');
+  if (!R.remote) {
+    label.textContent = 'Demo'; dot.className = 'h-1.5 w-1.5 shrink-0 rounded-full bg-faint';
+    pill.dataset.tip = 'Modo demonstração: sem servidor, as edições são simuladas. Rode “python -m smart_photo_edit” para usar o ComfyUI.';
+    return;
+  }
+  const c = R.status?.comfy, wf = activeWf();
+  const st = !R.status ? 'app' : c.online ? 'on' : c.launcher === 'running' ? 'starting' : 'off';
+  dot.className = 'h-1.5 w-1.5 shrink-0 rounded-full ' + { on: 'bg-ok', starting: 'bg-accent breathe', off: 'bg-danger', app: 'bg-danger' }[st];
+  label.textContent = wf ? shortName(wf.name) : 'ComfyUI';
+  pill.dataset.tip = { on: `ComfyUI conectado${c?.device?.name ? ' · ' + c.device.name : ''}`, starting: 'Iniciando o ComfyUI…', off: `ComfyUI offline em ${c?.url ?? ''}. Clique para configurar.`, app: 'O app local não responde.' }[st];
+}
+function applySupports() {
+  [['#strength', 'strength', 'intensidade'], ['#neg', 'negative', 'prompt negativo']].forEach(([sel, key, what]) => {
+    const el = $(sel), row = el.closest('.space-y-4 > div'), ok = supports(key);
+    el.disabled = !ok; row.style.opacity = ok ? '' : '.5';
+    row.querySelector('.unsup')?.remove();
+    if (!ok) row.insertAdjacentHTML('beforeend', `<p class="unsup mt-1 text-[11px] text-faint">Este workflow não usa ${what}.</p>`);
+  });
+  $('#popWf').textContent = R.remote ? (activeWf()?.name ?? 'ComfyUI') : 'Modo demonstração';
+}
+
+const chipCls = 'inline-flex h-[20px] items-center gap-1 rounded-full px-2 text-[11px] font-medium';
+function wfChip(w) {
+  if (!R.remote) return '';
+  const ck = R.checks[w.id];
+  if (!ck) return `<span class="${chipCls} bg-line/[.07] text-mute">Verificando…</span>`;
+  if (!ck.online) return `<span class="${chipCls} bg-line/[.07] text-mute">ComfyUI offline</span>`;
+  if (ck.ok) return `<span class="${chipCls} bg-ok/15 text-ok">${icon('check')}Pronto</span>`;
+  return `<span class="${chipCls} bg-accent/15 text-accent">${ck.issues.length} pendência${ck.issues.length > 1 ? 's' : ''}</span>`;
+}
+function renderWfList() {
+  const list = $('#wfList'), focused = document.activeElement?.dataset?.wf;
+  list.innerHTML = R.workflows.map(w => {
+    const ck = R.checks[w.id], issues = w.active && ck && ck.online && !ck.ok ? ck.issues : [];
+    return `<div class="relative">
+      <button role="radio" aria-checked="${w.active}" tabindex="${w.active ? 0 : -1}" data-wf="${esc(w.id)}"
+        class="flex w-full items-start gap-3 rounded-[14px] p-3.5 ${w.source === 'user' ? 'pr-12' : ''} text-left transition-transform duration-150 active:scale-[.995] ${w.active ? 'bg-line/[.08] shadow-[0_0_0_1.5px_rgb(var(--accent)/.7)]' : 'bg-line/[.04] hover:bg-line/[.07]'}">
+        <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full ${w.active ? 'bg-accent text-white' : 'shadow-[inset_0_0_0_1.5px_rgb(var(--line)/.3)]'}">${w.active ? icon('check') : ''}</span>
+        <span class="min-w-0 flex-1">
+          <span class="flex flex-wrap items-center gap-2"><span class="text-[13px] font-semibold">${esc(w.name)}</span>
+            <span class="${chipCls} bg-line/[.07] text-mute">${w.source === 'user' ? 'Importado' : 'Embutido'}</span>${wfChip(w)}</span>
+          ${w.description ? `<span class="mt-1 block text-[12px] leading-snug text-mute">${esc(w.description)}</span>` : ''}
+          ${issues.length ? `<ul class="mt-2.5 space-y-1.5 border-t border-line/[.08] pt-2.5 text-[12px] leading-snug text-mute">${issues.map(i => `<li class="flex gap-2"><span class="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent"></span><span class="select-text break-words">${esc(i.message)}</span></li>`).join('')}</ul>
+            <span class="mt-2 block text-[11px] text-faint">Instalar o que falta: <code class="select-text rounded bg-line/[.08] px-1 py-0.5 font-mono">python -m smart_photo_edit setup --comfyui-dir /caminho/do/ComfyUI</code></span>` : ''}
+        </span></button>
+      ${w.source === 'user' ? `<button class="icon-btn absolute right-2.5 top-2.5" data-wf-del="${esc(w.id)}" aria-label="Remover ${esc(w.name)}" data-tip="Remover">${icon('trash')}</button>` : ''}
+    </div>`;
+  }).join('') + Object.entries(R.errors).map(([f, m]) => `<div class="rounded-[14px] bg-danger/10 p-3.5 text-[12px] text-danger"><b class="font-semibold">${esc(f)}</b>: ${esc(m)}</div>`).join('');
+  $('#wfDir').textContent = R.userDir;
+  if (focused) $(`#wfList [data-wf="${CSS.escape(focused)}"]`)?.focus();
+}
+function renderWfParams() {
+  const wf = activeWf(), sec = $('#secParams'), box = $('#wfParams');
+  sec.classList.toggle('hidden', !wf || !wf.params.length);
+  if (!wf) return;
+  const vals = R.values[wf.id] || {};
+  box.innerHTML = wf.params.map(p => {
+    const v = vals[p.key] ?? p.default, head = `<div class="mb-1.5 flex items-center justify-between"><span class="label" id="pl-${p.key}">${esc(p.label)}</span>${p.type === 'number' ? `<span class="text-[12px] font-medium tabular-nums" id="pv-${p.key}">${v}</span>` : ''}</div>`;
+    const hint = p.hint ? `<p class="mt-1.5 text-[11px] leading-snug text-faint">${esc(p.hint)}</p>` : '';
+    if (p.type === 'choice') {
+      const i = Math.max(0, p.options.findIndex(o => String(o.value) === String(v))), n = p.options.length;
+      return `<div data-param="${esc(p.key)}">${head}<div class="relative grid rounded-[10px] bg-line/[.07] p-0.5" style="grid-template-columns:repeat(${n},1fr)" role="radiogroup" aria-labelledby="pl-${p.key}">
+        <span class="absolute inset-y-0.5 left-0.5 rounded-[8px] shadow-[0_1px_3px_rgb(0_0_0/.25),0_0_0_.5px_rgb(0_0_0/.1)] transition-transform duration-300 ease-out" style="width:calc((100% - 4px)/${n});background:rgb(var(--ink)/.14);transform:translateX(${i * 100}%)"></span>
+        ${p.options.map((o, k) => `<button role="radio" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}" data-k="${k}" class="relative z-10 h-7 rounded-[8px] px-2 text-[12px] font-medium transition-transform duration-150 active:scale-95 ${k === i ? '' : 'text-mute'}">${esc(o.label)}</button>`).join('')}
+      </div>${hint}</div>`;
+    }
+    return `<div data-param="${esc(p.key)}">${head}<input type="range" class="slider" min="${p.min}" max="${p.max}" step="${p.step || 1}" value="${v}" style="--p:${(v - p.min) / (p.max - p.min) * 100}%" aria-labelledby="pl-${p.key}">${hint}</div>`;
+  }).join('');
+}
+let paramSaveTimer;
+function setParam(key, value) {
+  const wf = activeWf(); if (!wf) return;
+  (R.values[wf.id] ||= {})[key] = value;
+  clearTimeout(paramSaveTimer);
+  paramSaveTimer = setTimeout(() => api('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow_params: { [wf.id]: { [key]: value } } }) })
+    .catch(e => toast({ kind: 'error', text: e.message })), 250);
+}
+$('#wfParams').addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if (!b) return;
+  const wf = activeWf(), key = b.closest('[data-param]').dataset.param, p = wf.params.find(x => x.key === key);
+  setParam(key, p.options[+b.dataset.k].value); renderWfParams();
+});
+$('#wfParams').addEventListener('keydown', e => {
+  const b = e.target.closest('[data-k]'); if (!b || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  e.preventDefault(); const wf = activeWf(), key = b.closest('[data-param]').dataset.param, p = wf.params.find(x => x.key === key);
+  const k = Math.max(0, Math.min(p.options.length - 1, +b.dataset.k + (e.key === 'ArrowRight' ? 1 : -1)));
+  setParam(key, p.options[k].value); renderWfParams(); $(`#wfParams [data-param="${CSS.escape(key)}"] [data-k="${k}"]`).focus();
+});
+$('#wfParams').addEventListener('input', e => {
+  if (e.target.type !== 'range') return;
+  const key = e.target.closest('[data-param]').dataset.param, p = activeWf().params.find(x => x.key === key), v = +e.target.value;
+  e.target.style.setProperty('--p', (v - p.min) / (p.max - p.min) * 100 + '%'); $(`#pv-${CSS.escape(key)}`).textContent = v; setParam(key, v);
+});
+
+async function selectWorkflow(id) {
+  if (id === R.active) return;
+  const prev = R.active;
+  R.active = id; R.workflows.forEach(w => { w.active = w.id === id; });
+  renderEngine(); applySupports(); renderWfParams(); if (advOpen()) renderWfList();
+  try { await api('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow: id }) }); toast({ text: `Workflow: ${activeWf().name}`, duration: 2200 }); }
+  catch (e) { R.active = prev; R.workflows.forEach(w => { w.active = w.id === prev; }); renderEngine(); applySupports(); renderWfParams(); renderWfList(); toast({ kind: 'error', text: e.message }); }
+}
+$('#wfList').addEventListener('click', async e => {
+  const del = e.target.closest('[data-wf-del]');
+  if (del) {
+    const id = del.dataset.wfDel, name = R.workflows.find(w => w.id === id)?.name;
+    try {
+      const { backup } = await api(`/api/workflows/${id}`, { method: 'DELETE' });
+      await loadWorkflows(); renderWfList(); renderWfParams(); renderEngine(); applySupports();
+      toast({ text: `Workflow removido: ${name}`, action: { label: 'Desfazer', icon: 'undo', run: () => importWorkflowText(backup, name + '.json') } });
+    } catch (err) { toast({ kind: 'error', text: err.message }); }
+    return;
+  }
+  const b = e.target.closest('[data-wf]'); if (b) selectWorkflow(b.dataset.wf);
+});
+$('#wfList').addEventListener('keydown', e => {
+  const b = e.target.closest('[data-wf]'); if (!b || !['ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  e.preventDefault(); const ids = R.workflows.map(w => w.id), i = ids.indexOf(b.dataset.wf);
+  const next = ids[Math.max(0, Math.min(ids.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+  selectWorkflow(next); setTimeout(() => $(`#wfList [data-wf="${CSS.escape(next)}"]`)?.focus(), 0);
+});
+
+async function importWorkflowText(text, filename) {
+  try {
+    const wf = await api(`/api/workflows/import?filename=${encodeURIComponent(filename)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text });
+    await loadWorkflows(); await selectWorkflow(wf.id); renderWfList(); renderWfParams();
+    refreshChecks([wf.id]);
+    toast({ kind: 'success', text: `Workflow importado: ${wf.name}` });
+  } catch (e) { toast({ kind: 'error', text: e.message, duration: 10000 }); }
+}
+$('#wfImport').onclick = () => $('#wfFile').click();
+$('#wfFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (f.size > 20 * 1024 * 1024) return toast({ kind: 'error', text: 'Arquivo grande demais para ser um workflow.' });
+  importWorkflowText(await f.text(), f.name);
+});
+
+/* motor: endereço, status e início automático */
+const URL_RE = /^(https?:\/\/)?[\w.\-]+(:\d{1,5})?(\/.*)?$/i;
+function renderAdvStatus() {
+  const c = R.status?.comfy, el = $('#advUrlMsg'), v = $('#advUrl').value.trim();
+  if (v && !URL_RE.test(v)) { el.innerHTML = `${icon('alert', 'text-danger')}<span class="text-danger">Use algo como http://127.0.0.1:8188</span>`; return; }
+  if (!R.status) { el.innerHTML = `${icon('alert', 'text-danger')}<span>O app local não responde.</span>`; return; }
+  if (c.online) {
+    const d = c.device, free = d?.vram_free ? ` · ${(d.vram_free / 2 ** 30).toFixed(1)} GB de VRAM livres` : '';
+    el.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-ok"></span><span>Conectado${d?.name ? ' · ' + esc(d.name) : ''}${free}</span>`;
+  } else if (c.launcher === 'running') el.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-accent breathe"></span><span>Iniciando o ComfyUI… (o primeiro início pode levar um minuto)</span>`;
+  else el.innerHTML = `<span class="h-1.5 w-1.5 rounded-full bg-danger"></span><span>Sem resposta em ${esc(c.url)}${c.can_launch ? '. Use “Iniciar agora”.' : '. Abra o ComfyUI ou configure como iniciá-lo abaixo.'}</span>`;
+}
+async function saveSettings(patch) {
+  try { advSettings = await api('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }); return true; }
+  catch (e) { toast({ kind: 'error', text: e.message }); return false; }
+}
+async function commitUrl() {
+  const v = $('#advUrl').value.trim();
+  if (!v || !URL_RE.test(v)) return renderAdvStatus();
+  if (await saveSettings({ comfy_url: v })) { $('#advUrl').value = advSettings.comfy_url; await refreshStatus(); refreshChecks(); }
+}
+$('#advUrl').addEventListener('input', renderAdvStatus);
+$('#advUrl').addEventListener('change', commitUrl);
+$('#advUrl').addEventListener('keydown', e => { if (e.key === 'Enter') commitUrl(); });
+$('#advTest').onclick = async () => { await commitUrl(); await refreshStatus(); refreshChecks(); };
+$('#advCmd').addEventListener('change', async e => { if (await saveSettings({ comfy_command: e.target.value })) { await refreshStatus(); } });
+$('#advCwd').addEventListener('change', e => saveSettings({ comfy_cwd: e.target.value }));
+$('#advAuto').onclick = async e => { const on = e.currentTarget.getAttribute('aria-checked') !== 'true'; e.currentTarget.setAttribute('aria-checked', on); paintSwitch(); await saveSettings({ comfy_autostart: on }); };
+function paintSwitch() { const b = $('#advAuto'), on = b.getAttribute('aria-checked') === 'true'; b.firstElementChild.style.transform = on ? 'translateX(16px)' : ''; }
+$('#advLaunchToggle').onclick = () => {
+  const box = $('#advLaunch'), open = box.classList.toggle('hidden') === false;
+  $('#advLaunchToggle').setAttribute('aria-expanded', open); $('#advChev').style.transform = open ? 'rotate(90deg)' : '';
+};
+$('#advStart').onclick = async () => {
+  await saveSettings({ comfy_command: $('#advCmd').value, comfy_cwd: $('#advCwd').value });
+  try {
+    await api('/api/comfy/start', { method: 'POST' });
+    for (let i = 0; i < 90 && advOpen(); i++) { await refreshStatus(); if (R.status?.comfy.online) { refreshChecks(); break; } await sleep(1500); }
+  } catch (e) { toast({ kind: 'error', text: e.message }); }
+};
+
+async function openAdv() {
+  if (advOpen()) return;
+  closePopover(); if (palOpen()) closePalette(false);
+  advReturn = document.activeElement; $('#app').inert = true; adv.dataset.open = 'true';
+  const body = adv.querySelector('.space-y-7');
+  let note = $('#advDemo');
+  if (!R.remote) {
+    if (!note) body.insertAdjacentHTML('afterbegin', `<div id="advDemo" class="rounded-[14px] bg-accent/10 p-3.5 text-[13px] leading-relaxed"><b class="font-semibold">Modo demonstração.</b> Você abriu a interface sem o servidor, então as edições são simuladas. Para usar o ComfyUI, inicie o app com <code class="rounded bg-line/[.08] px-1 py-0.5 font-mono text-[12px]">python -m smart_photo_edit</code> e abra o endereço que ele mostrar.</div>`);
+    [...body.children].forEach(c => { if (c.id !== 'advDemo') c.classList.add('hidden'); });
+    setTimeout(() => $('#advClose').focus(), 0); return;
+  }
+  note?.remove(); [...body.children].forEach(c => { if (c.tagName === 'SECTION' && c.id !== 'secParams') c.classList.remove('hidden'); });
+  try { advSettings = await api('/api/settings'); } catch { advSettings = {}; }
+  $('#advUrl').value = advSettings.comfy_url || ''; $('#advCmd').value = advSettings.comfy_command || ''; $('#advCwd').value = advSettings.comfy_cwd || '';
+  $('#advAuto').setAttribute('aria-checked', !!advSettings.comfy_autostart); paintSwitch();
+  if (advSettings.comfy_command && $('#advLaunch').classList.contains('hidden')) $('#advLaunchToggle').click();
+  renderAdvStatus(); renderWfList(); renderWfParams();
+  setTimeout(() => $('#advUrl').focus(), 0);
+  await refreshStatus(); refreshChecks();
+}
+function closeAdv() { adv.dataset.open = 'false'; $('#app').inert = false; advReturn?.focus?.(); }
+adv.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAdv(); } });
+adv.addEventListener('pointerdown', e => { if (e.target.matches('[data-close-adv]')) { e.preventDefault(); closeAdv(); } });
+$('#advClose').onclick = closeAdv;
+$('#enginePill').onclick = openAdv;
+$('#popAdv').onclick = openAdv;
+
+async function bootRemote() {
+  try { R.status = await api('/api/status'); R.remote = true; engine = remoteEngine; await loadWorkflows(); }
+  catch { R.remote = false; engine = demoEngine; }
+  renderEngine(); applySupports(); looksFor = null; renderLooks();
+  if (R.remote) setInterval(() => { if (!document.hidden) refreshStatus(); }, 5000);
+}
+
 /* ───────────────────────── botões / init ───────────────────────── */
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
 $('#copyBtn').onclick = copyImage; $('#exportBtn').onclick = exportImage;
@@ -1135,7 +1507,7 @@ $('#paletteBtn').onclick = openPalette;
 $('#emptyOpen').onclick = pickFile; $('#emptySample').onclick = loadSample; $('#stack').onclick = loadSample;
 $('#railList').addEventListener('keydown', e => { if (e.key === 'Delete' || e.key === 'Backspace') { const i = +document.activeElement.dataset.i; if (i > 0) { e.preventDefault(); removeVersion(i); } } });
 $$('[data-kbd]').forEach(el => { el.innerHTML = kbds(el.dataset.kbd); });
-syncSettingsUI(); renderAll(); renderHero();
+syncSettingsUI(); renderAll(); renderHero(); bootRemote();
 </script>
 </body>
 </html>

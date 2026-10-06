@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 from smart_photo_edit import config, paths
 from smart_photo_edit.launcher import split_command
@@ -36,8 +37,13 @@ def test_user_dir_per_platform(monkeypatch):
     assert paths.user_data_dir().name == "SmartPhotoEdit"
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/xdg")
-    assert str(paths.user_data_dir()) == "/tmp/xdg/smart-photo-edit"
+    assert paths.user_data_dir() == Path("/tmp/xdg") / "smart-photo-edit"
 
 
-def test_split_command_keeps_quoted_paths(monkeypatch):
-    assert split_command('python "/a b/main.py" --port 1') == ["python", "/a b/main.py", "--port", "1"]
+def test_split_command_keeps_quoted_paths():
+    assert split_command('python "/a b/main.py" --port 1', posix=True) == ["python", "/a b/main.py", "--port", "1"]
+
+
+def test_split_command_windows_style_keeps_backslashes_and_drops_quotes():
+    cmd = r'"C:\Program Files\ComfyUI\python.exe" C:\ComfyUI\main.py --port 8188'
+    assert split_command(cmd, posix=False) == [r"C:\Program Files\ComfyUI\python.exe", r"C:\ComfyUI\main.py", "--port", "8188"]
