@@ -119,7 +119,7 @@ Em *Configurações avançadas → Workflow* você escolhe entre os embutidos e 
 }
 ```
 
-Controles que o workflow não suporta (por exemplo *Intensidade* e *Evitar*, quando não há vínculo) ficam desabilitados na interface. Exemplos prontos em [`smart_photo_edit/builtin_workflows/`](smart_photo_edit/builtin_workflows). Seus workflows importados ficam em `<pasta de dados>/workflows/`.
+Controles que o workflow não suporta (por exemplo *Intensidade* e *Evitar*, quando não há vínculo) ficam ocultos na interface. Exemplos prontos em [`smart_photo_edit/builtin_workflows/`](smart_photo_edit/builtin_workflows). Seus workflows importados ficam em `<pasta de dados>/workflows/`.
 
 ## Prompts e presets
 
@@ -137,7 +137,7 @@ O primeiro uso requer internet e baixa aproximadamente 1,2 GB de pesos, além da
 
 ### Segunda imagem de referência
 
-Nos workflows embutidos Base e Viggle Turbo, **Adicionar referência** anexa uma segunda foto como miniatura removível junto ao prompt. Use `<image1>` para a imagem a editar e `<image2>` para a referência. Exemplo: `Coloque na pessoa de <image1> o boné branco de <image2>, preservando sua cor, formato e detalhes.` O prompt é enviado sem instruções automáticas de fundo ou objeto. Workflows importados não recebem esse recurso automaticamente.
+Nos workflows embutidos Base e Viggle Turbo, **Adicionar referência** anexa uma segunda foto como miniatura removível acima do prompt; clicar nela insere `<image2>` no cursor. Use `<image1>` para a imagem a editar e `<image2>` para a referência. Exemplo: `Coloque na pessoa de <image1> o boné branco de <image2>, preservando sua cor, formato e detalhes.` O prompt é enviado sem instruções automáticas de fundo ou objeto. Workflows importados não recebem esse recurso automaticamente.
 
 A referência reutiliza os mesmos modelos, mas acrescenta processamento e memória. Comece com resolução moderada e uma variação; a execução com duas fotos na GTX 1660 Ti de 6 GB ainda precisa de medição real. Os metadados guardam o prompt efetivamente enviado, o texto original e a tag, nome e hash da referência. A foto de referência não é arquivada no histórico: para reutilizá-la depois, selecione o arquivo novamente.
 
@@ -145,13 +145,13 @@ A referência reutiliza os mesmos modelos, mas acrescenta processamento e memór
 
 O botão **Histórico** na barra superior abre as imagens já editadas, com data, prompt, semente e workflow. Você pode reabrir uma imagem para continuar editando, reutilizar seu prompt ou excluir a imagem do histórico. Remover uma versão da sessão ou desfazer uma edição não apaga o resultado salvo no histórico.
 
-Cada resultado é salvo como PNG com o prompt nos campos `prompt` e `Description` e os dados da edição no campo `SmartPhotoEdit` (JSON UTF-8: prompt, semente, workflow, parâmetros e modelos). **Exportar** baixa esse PNG sem remover seus metadados. Ao abrir novamente um PNG exportado pelo app, o prompt também aparece na interface. A área **Prompt desta edição** acompanha a versão selecionada e fica separada do campo da próxima instrução.
+Cada resultado é salvo como PNG com o prompt nos campos `prompt` e `Description` e os dados da edição no campo `SmartPhotoEdit` (JSON UTF-8: prompt, semente, workflow, parâmetros e modelos). **Exportar** baixa esse PNG sem remover seus metadados. Ao abrir novamente um PNG exportado pelo app, o prompt também aparece na interface. A linha **Prompt** logo acima do campo acompanha a versão selecionada: clique nela para ler o texto inteiro ou em **Reutilizar** para levá-lo ao campo da próxima instrução.
 
 As imagens ficam em `<pasta de dados>/results/` e permanecem após fechar ou reiniciar o app, sem expiração automática. Arquivos antigos que ainda estiverem nessa pasta aparecem no histórico; resultados anteriores sem metadados mostram “Prompt não registrado”. A cópia para a área de transferência depende do navegador e não oferece a mesma preservação de metadados que Exportar.
 
 ## Atalhos
 
-`Ctrl/⌘+K` comandos · `Ctrl/⌘+,` configurações · `Ctrl/⌘+O` abrir · `Ctrl/⌘+S` exportar · `Enter` gerar · `Esc` cancelar · `C` antes/depois (divisor) · `L` lado a lado com zoom sincronizado (`+` `−` `0`) · `Ctrl/⌘+Z` desfazer
+`Ctrl/⌘+K` comandos · `Ctrl/⌘+,` configurações · `Ctrl/⌘+O` abrir · `Ctrl/⌘+S` exportar · `Enter` gerar · `Esc` cancelar, fechar painel ou voltar à visão simples · `C` antes/depois (divisor) · `L` lado a lado com zoom sincronizado (`+` `−` `0`) · `/` ir ao prompt · `Ctrl/⌘+Z` desfazer · `Ctrl/⌘+Shift+C` copiar imagem
 
 ## Dados e segurança
 

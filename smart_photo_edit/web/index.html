@@ -25,16 +25,18 @@
     --ink: 22 22 25; --mute: 100 99 106; --faint: 142 141 148; --line: 0 0 0;
     --accent: 214 92 8; --danger: 205 38 38; --ok: 21 128 72;
     --pri-a: 58 58 64; --pri-b: 22 22 25; --pri-fg: 255 255 255; --pri-hi: .16;
-    --amb: .42;
+    --seg-thumb: 255 255 255 / 1;
+    --amb: .42; --dock: 0px;
     --glass-shadow: 0 0 0 .5px rgb(0 0 0 / .12), inset 0 1px 0 rgb(255 255 255 / .9), 0 24px 48px -16px rgb(40 24 8 / .28), 0 2px 8px rgb(40 24 8 / .08);
     --frame-shadow: 0 0 0 .5px rgb(0 0 0 / .18), 0 40px 80px -24px rgb(40 24 8 / .45), 0 8px 24px -8px rgb(40 24 8 / .2);
   }
   .dark {
     color-scheme: dark;
     --bg: 11 11 13; --canvas: 14 14 16; --glass: 38 38 43; --glass-a: .6;
-    --ink: 240 240 243; --mute: 150 150 160; --faint: 100 100 110; --line: 255 255 255;
+    --ink: 240 240 243; --mute: 150 150 160; --faint: 110 110 120; --line: 255 255 255;
     --accent: 255 159 67; --danger: 255 105 97; --ok: 76 200 120;
     --pri-a: 255 255 255; --pri-b: 218 218 226; --pri-fg: 14 14 16; --pri-hi: .7;
+    --seg-thumb: 255 255 255 / .15;
     --amb: .5;
     --glass-shadow: 0 0 0 .5px rgb(255 255 255 / .11), inset 0 1px 0 rgb(255 255 255 / .09), 0 28px 56px -16px rgb(0 0 0 / .7), 0 2px 10px rgb(0 0 0 / .35);
     --frame-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 50px 100px -28px rgb(0 0 0 / .85), 0 10px 30px -8px rgb(0 0 0 / .5);
@@ -42,29 +44,26 @@
   select option, select optgroup { color: rgb(var(--ink)); background-color: rgb(var(--bg)); }
   html, body { height: 100%; }
   body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.006em; }
-
-  /* Grão sutil: dá materialidade às superfícies escuras */
-  body::after { content: ""; position: fixed; inset: 0; z-index: 80; pointer-events: none; opacity: .045; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  #stage { --dock: 0px; --side: 0px; }
+  /* Com o histórico aberto, o palco cede a largura do painel em vez de ficar escondido atrás dele. */
+  @media (min-width: 1100px) { body[data-history="true"] #stage { --side: 412px; } }
 
   /* Ícones: uma única família (traço estilo Lucide), 16px */
   .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-sm { width: 14px; height: 14px; }
 
   :focus-visible { outline: 2px solid rgb(var(--accent) / .85); outline-offset: 2px; border-radius: 10px; }
-  input:focus-visible, textarea:focus-visible { outline: none; }
+  input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; }
   ::selection { background: rgb(var(--accent) / .3); }
   #historyPanel[hidden], #historyMore[hidden] { display: none; }
-  @media (max-width: 639px) {
-    #app > header { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding-inline: 12px; }
-    #titleWrap, .toolbarUndo, #compareBtn, #sbsBtn, #copyBtn { display: none; }
-    #enginePill { max-width: 120px; }
-    #bar > div { flex-wrap: wrap; }
-
-    #prompt { flex-basis: calc(100% - 48px); width: calc(100% - 48px); min-width: 0; }
-    #clearPrompt { margin-left: auto; }
-    #fitbox { left: 72px; right: 16px; }
-  }
   .no-scrollbar { scrollbar-width: none; } .no-scrollbar::-webkit-scrollbar { display: none; }
+  .scroll-thin { scrollbar-width: thin; scrollbar-color: rgb(var(--ink) / .2) transparent; }
+
+  @media (max-width: 639px) {
+    #app > header { grid-template-columns: minmax(0, 1fr) auto; padding-inline: 12px; }
+    #titleWrap, .hide-sm { display: none; }
+    #fitbox { left: 92px; right: 16px; }
+  }
 
   /* Vidro */
   .glass { background: rgb(var(--glass) / var(--glass-a)); -webkit-backdrop-filter: blur(40px) saturate(1.8); backdrop-filter: blur(40px) saturate(1.8); box-shadow: var(--glass-shadow); }
@@ -72,7 +71,7 @@
   /* Painéis que entram/saem: só opacity + transform */
   .pop { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease, visibility 0s linear .18s; }
   .pop[data-open="true"] { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
-  .pop-panel { transform: scale(.96) translateY(8px); transition: transform .28s cubic-bezier(.32,.72,0,1); transform-origin: 50% 100%; }
+  .pop-panel { transform: scale(.97) translateY(6px); transition: transform .26s cubic-bezier(.32,.72,0,1); transform-origin: 50% 100%; }
   .pop[data-open="true"] .pop-panel { transform: none; }
   .slide-l { transform: translateX(-12px); transition: opacity .2s ease, transform .3s cubic-bezier(.32,.72,0,1), visibility 0s linear .3s; }
   .slide-l[data-open="true"] { transform: none; transition-delay: 0s; }
@@ -80,21 +79,23 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes sweep { from { transform: translateX(-33.3%); } to { transform: translateX(33.3%); } }
   @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
-  @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes enter-r { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
   @keyframes drift1 { 0% { transform: translate(-30%, -10%) scale(1); } 50% { transform: translate(20%, 15%) scale(1.25); } 100% { transform: translate(-30%, -10%) scale(1); } }
   @keyframes drift2 { 0% { transform: translate(40%, 20%) scale(1.2); } 50% { transform: translate(-15%, -15%) scale(.9); } 100% { transform: translate(40%, 20%) scale(1.2); } }
   @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes breathe { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
   .spin { animation: spin .9s linear infinite; }
   .shake { animation: shake .32s ease; }
-  .rise { animation: rise .6s cubic-bezier(.32,.72,0,1) backwards; }
+  .rise { animation: rise .5s cubic-bezier(.32,.72,0,1) backwards; }
   .breathe { animation: breathe 1.4s ease-in-out infinite; }
+  #historyPanel:not([hidden]) { animation: enter-r .28s cubic-bezier(.32,.72,0,1) backwards; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; transition-delay: 0s !important; }
   }
 
-  /* Aura: luz que percorre a borda da barra enquanto gera */
+  /* Aura: luz que percorre a borda do compositor enquanto gera */
   .aura-ring { position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity .35s ease;
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
@@ -102,7 +103,7 @@
     background: linear-gradient(90deg, transparent 40%, rgb(var(--accent) / .0) 43%, rgb(var(--accent)) 50%, rgb(var(--accent) / 0) 57%, transparent 60%); }
   #bar[data-busy="true"] .aura-ring { opacity: 1; }
   #bar[data-busy="true"] .aura-ring > span { animation: sweep 1.6s cubic-bezier(.45,0,.55,1) infinite alternate; }
-  #bar:focus-within { box-shadow: var(--glass-shadow), 0 0 0 1px rgb(var(--accent) / .55), 0 0 0 5px rgb(var(--accent) / .13); }
+  #bar:focus-within { box-shadow: var(--glass-shadow), 0 0 0 1px rgb(var(--accent) / .5), 0 0 0 4px rgb(var(--accent) / .12); }
 
   /* Aurora sobre a imagem durante a geração */
   .aurora { position: absolute; width: 80%; height: 110%; border-radius: 50%; left: 10%; top: -5%; }
@@ -121,22 +122,19 @@
   .slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgb(var(--accent) / .45); }
   .slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px rgb(var(--accent) / .45); }
 
-  /* Histórico (tira flutuante) */
-  .thumb { position: relative; display: block; height: 48px; width: 48px; border-radius: 9px; overflow: hidden; opacity: .62; transition: transform .2s cubic-bezier(.32,.72,0,1), opacity .15s ease; box-shadow: 0 0 0 .5px rgb(var(--line) / .2); }
+  /* Versões da sessão (tira flutuante) */
+  .thumb { position: relative; display: block; height: 48px; width: 48px; border-radius: 10px; overflow: hidden; opacity: .62; transition: transform .2s cubic-bezier(.32,.72,0,1), opacity .15s ease; box-shadow: 0 0 0 .5px rgb(var(--line) / .2); }
   .thumb:hover { opacity: 1; }
   .thumb:active { transform: scale(.94); }
   .thumb[aria-selected="true"] { opacity: 1; box-shadow: 0 0 0 2px rgb(var(--bg) / 1), 0 0 0 3.5px rgb(var(--ink) / .92); }
 
-  /* Looks (pré-visualização) */
-  .look { display: flex; flex: none; flex-direction: column; align-items: center; gap: 6px; border-radius: 12px; }
-  .look-img { position: relative; display: block; width: 88px; height: 58px; overflow: hidden; border-radius: 10px; background: rgb(var(--ink) / .08);
-    box-shadow: 0 0 0 .5px rgb(var(--line) / .22), 0 10px 20px -8px rgb(0 0 0 / .45); transition: transform .25s cubic-bezier(.32,.72,0,1); }
-  .look-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s ease; }
-  .look:hover .look-img { transform: translateY(-3px) scale(1.04); }
-  .look:active .look-img { transform: scale(.97); }
-  .look[aria-pressed="true"] .look-img { box-shadow: 0 0 0 2px rgb(var(--accent)), 0 10px 20px -8px rgb(0 0 0 / .45); }
-  .look-label { font-size: 11px; font-weight: 500; color: rgb(var(--mute)); }
-  .look:hover .look-label, .look[aria-pressed="true"] .look-label { color: rgb(var(--ink)); }
+  /* Presets */
+  .look { position: relative; display: block; height: 56px; overflow: hidden; border-radius: 12px; text-align: left; box-shadow: 0 0 0 .5px rgb(var(--line) / .2); transition: transform .2s cubic-bezier(.32,.72,0,1); }
+  .look:hover { transform: translateY(-2px); }
+  .look:active { transform: scale(.97); }
+  .look[aria-pressed="true"] { box-shadow: 0 0 0 2px rgb(var(--accent)); }
+  .look::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(0 0 0 / .45)); }
+  .look-label { position: absolute; left: 10px; bottom: 7px; z-index: 1; font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .4); }
 
   /* Estado vazio */
   #stack .card { position: absolute; width: 300px; height: 188px; border-radius: 12px; background-size: cover; background-position: center;
@@ -150,15 +148,14 @@
   #stack:hover .c2, body[data-drag="true"] #stack .c2 { transform: translateY(-8px) scale(1.02); }
   #stack:active .c2 { transform: scale(.99); }
   body[data-drag="true"] #dropOverlay { opacity: 1; }
-  @media (max-height: 680px) { #stack { display: none; } }
 
   .pane { cursor: grab; } .pane.grabbing { cursor: grabbing; }
   #splitHandle:focus-visible { outline: none; }
   #splitHandle:focus-visible .grip { box-shadow: var(--glass-shadow), 0 0 0 3px rgb(var(--accent) / .65); }
   #splitUI:active .grip { transform: scale(1.1); }
   #palList [aria-selected="true"] { background: rgb(var(--ink) / .08); }
+  #prompt::-webkit-scrollbar { width: 6px; } #prompt::-webkit-scrollbar-thumb { background: rgb(var(--ink) / .2); border-radius: 3px; }
 </style>
-
 
 </head>
 
@@ -168,8 +165,9 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-image-plus" viewBox="0 0 24 24"><path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
-  <symbol id="i-broom" viewBox="0 0 24 24"><path d="m13 11 7-8M12 10l5 4M11 11c-4 0-7 3-8 8 4 2 9 2 12-2l1-3zM7 15l-2 5M10 17l-1 4"/></symbol>
   <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></symbol>
+  <symbol id="i-wand" viewBox="0 0 24 24"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
   <symbol id="i-square" viewBox="0 0 24 24"><rect width="12" height="12" x="6" y="6" rx="2"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
   <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13"/></symbol>
@@ -179,10 +177,10 @@
   <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
   <symbol id="i-dice" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>
   <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
-  <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
   <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
@@ -195,25 +193,22 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
-  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
   <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
-<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.6 7"/><path d="M3 4v7h7"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.6 7"/><path d="M3 4v7h7"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-corner-up-left" viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></symbol>
 </svg>
 
 <div id="app" class="relative flex h-full flex-col">
 
   <!-- Barra de ferramentas -->
-  <header class="relative z-30 grid h-[52px] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line/[.06] bg-bg/55 px-4 backdrop-blur-2xl backdrop-saturate-150">
-    <div class="flex items-center gap-2.5">
+  <header class="relative z-30 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line/[.06] bg-bg/55 px-3 backdrop-blur-2xl backdrop-saturate-150">
+    <div class="flex items-center gap-2 pl-1">
       <svg class="ic text-accent" style="width:18px;height:18px"><use href="#i-sparkles"/></svg>
       <span class="hidden text-[13px] font-semibold tracking-[-.012em] md:inline">Smart Photo Edit</span>
-      <button id="enginePill" class="inline-flex h-[22px] max-w-[260px] items-center gap-1.5 rounded-full bg-line/[.07] px-2.5 text-[11px] font-medium text-mute hover:bg-line/[.11] hover:text-ink active:scale-95" data-tip="Modo demonstração" data-tip-pos="bottom" aria-label="Abrir configurações avançadas">
-        <span id="engDot" class="h-1.5 w-1.5 shrink-0 rounded-full bg-faint"></span><span id="engLabel" class="truncate">Demo</span>
-      </button>
     </div>
 
     <div id="titleWrap" class="flex min-w-0 flex-col items-center invisible">
@@ -222,17 +217,22 @@
       <span id="meta" class="-mt-px text-[11px] tabular-nums text-faint"></span>
     </div>
 
-    <div class="flex items-center justify-end gap-1.5">
-      <div class="toolbarUndo flex items-center rounded-[11px] bg-line/[.06] p-0.5">
-        <button id="undoBtn" class="icon-btn !h-7 !w-7" data-tip="Desfazer" data-keys="mod+Z" aria-label="Desfazer"><svg class="ic"><use href="#i-undo"/></svg></button>
-        <button id="redoBtn" class="icon-btn !h-7 !w-7" data-tip="Refazer" data-keys="mod+shift+Z" aria-label="Refazer"><svg class="ic"><use href="#i-redo"/></svg></button>
+    <div class="flex items-center justify-end gap-1">
+      <div class="hide-sm flex items-center">
+        <button id="undoBtn" class="icon-btn" data-tip="Desfazer" data-keys="mod+Z" aria-label="Desfazer"><svg class="ic"><use href="#i-undo"/></svg></button>
+        <button id="redoBtn" class="icon-btn" data-tip="Refazer" data-keys="mod+shift+Z" aria-label="Refazer"><svg class="ic"><use href="#i-redo"/></svg></button>
       </div>
-      <button id="compareBtn" class="icon-btn" data-tip="Comparar antes e depois" data-keys="C" aria-label="Comparar antes e depois" aria-pressed="false"><svg class="ic"><use href="#i-split"/></svg></button>
-      <button id="sbsBtn" class="icon-btn" data-tip="Lado a lado" data-keys="L" aria-label="Lado a lado com zoom sincronizado" aria-pressed="false"><svg class="ic"><use href="#i-columns"/></svg></button>
-      <button id="copyBtn" class="icon-btn" data-tip="Copiar imagem" data-keys="mod+shift+C" aria-label="Copiar imagem"><svg class="ic"><use href="#i-copy"/></svg></button>
+      <div id="viewSeg" class="seg seg-flat hide-sm mx-1 grid-cols-3" role="group" aria-label="Modo de visualização">
+        <button id="singleBtn" class="seg-btn !w-8 !px-0" data-tip="Editado" data-keys="Esc" aria-label="Ver só a edição" aria-pressed="true"><svg class="ic"><use href="#i-image"/></svg></button>
+        <button id="compareBtn" class="seg-btn !w-8 !px-0" data-tip="Comparar antes e depois" data-keys="C" aria-label="Comparar antes e depois" aria-pressed="false"><svg class="ic"><use href="#i-split"/></svg></button>
+        <button id="sbsBtn" class="seg-btn !w-8 !px-0" data-tip="Lado a lado" data-keys="L" aria-label="Lado a lado com zoom sincronizado" aria-pressed="false"><svg class="ic"><use href="#i-columns"/></svg></button>
+      </div>
       <button id="historyBtn" class="icon-btn" data-tip="Histórico" aria-label="Histórico de edições" aria-expanded="false" aria-controls="historyPanel"><svg class="ic"><use href="#i-history"/></svg></button>
-      <button id="paletteBtn" class="icon-btn" data-tip="Comandos" data-keys="mod+K" aria-label="Abrir comandos"><svg class="ic"><use href="#i-search"/></svg></button>
-      <button id="exportBtn" class="btn-primary ml-1 !h-8 !px-3.5" data-tip="Exportar" data-keys="mod+S"><svg class="ic"><use href="#i-download"/></svg><span class="hidden sm:inline">Exportar</span></button>
+      <button id="advBtn" class="icon-btn" data-tip="Configurações" data-keys="mod+," aria-label="Configurações avançadas">
+        <svg class="ic"><use href="#i-settings"/></svg>
+        <span id="engDot" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-faint ring-2 ring-bg"></span>
+      </button>
+      <button id="exportBtn" class="btn-primary ml-1" data-tip="Exportar" data-keys="mod+S"><svg class="ic"><use href="#i-download"/></svg><span class="hidden sm:inline">Exportar</span></button>
     </div>
   </header>
 
@@ -243,7 +243,7 @@
     <div id="ambient" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
     <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 75% 70% at 50% 42%, transparent 30%, rgb(var(--canvas) / .75) 100%)"></div>
 
-    <div id="fitbox" class="absolute inset-x-24 bottom-[204px] top-7 flex items-center justify-center">
+    <div id="fitbox" class="absolute bottom-[calc(var(--dock)+36px)] left-24 right-[calc(6rem+var(--side))] top-6 flex items-center justify-center">
       <div id="frame" class="relative overflow-hidden rounded-[10px] opacity-0 transition-opacity duration-200" style="width:0;height:0;box-shadow:var(--frame-shadow)">
         <div id="layers" class="absolute inset-0"></div>
         <div id="splitUI" class="pop absolute inset-0 z-20 cursor-ew-resize touch-none" data-open="false">
@@ -257,9 +257,9 @@
         </div>
         <div id="busyLayer" class="pop absolute inset-0 z-10 overflow-hidden bg-black/30" data-open="false">
           <div class="aurora a"></div><div class="aurora b"></div>
-          <div class="glass absolute bottom-3 left-1/2 inline-flex h-8 -translate-x-1/2 items-center gap-2 rounded-full pl-3 pr-3.5 text-[12px] font-medium">
-            <svg class="ic spin" style="width:14px;height:14px"><use href="#i-loader"/></svg>
-            <span id="busyText" class="tabular-nums">Gerando…</span>
+          <div class="glass absolute bottom-3 left-1/2 inline-flex h-8 max-w-[calc(100%-24px)] -translate-x-1/2 items-center gap-2 rounded-full pl-3 pr-3.5 text-[12px] font-medium">
+            <svg class="ic spin ic-sm"><use href="#i-loader"/></svg>
+            <span id="busyText" class="truncate tabular-nums">Gerando…</span>
           </div>
         </div>
       </div>
@@ -273,26 +273,26 @@
           <span class="glass pointer-events-none absolute left-3 top-3 inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold">Editado</span>
         </div>
         <div id="zoomBar" class="glass absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-0.5 rounded-full p-1">
-          <button id="zOut" class="icon-btn !h-7 !w-7 !rounded-full" aria-label="Diminuir zoom" data-tip="Diminuir zoom" data-keys="-"><svg class="ic"><use href="#i-minus"/></svg></button>
+          <button id="zOut" class="icon-btn icon-btn-sm !rounded-full" aria-label="Diminuir zoom" data-tip="Diminuir zoom" data-keys="-"><svg class="ic"><use href="#i-minus"/></svg></button>
           <button id="zPct" class="h-7 min-w-[52px] rounded-full px-2 text-[12px] font-medium tabular-nums hover:bg-line/[.08] active:scale-95" aria-label="Zoom em tamanho real (100%)" data-tip="Tamanho real (100%)">100%</button>
-          <button id="zIn" class="icon-btn !h-7 !w-7 !rounded-full" aria-label="Aumentar zoom" data-tip="Aumentar zoom" data-keys="+"><svg class="ic"><use href="#i-plus"/></svg></button>
+          <button id="zIn" class="icon-btn icon-btn-sm !rounded-full" aria-label="Aumentar zoom" data-tip="Aumentar zoom" data-keys="+"><svg class="ic"><use href="#i-plus"/></svg></button>
           <span class="mx-0.5 h-4 w-px bg-line/[.12]"></span>
-          <button id="zFit" class="icon-btn !h-7 !w-7 !rounded-full" aria-label="Ajustar à janela" data-tip="Ajustar à janela" data-keys="0"><svg class="ic"><use href="#i-maximize"/></svg></button>
+          <button id="zFit" class="icon-btn icon-btn-sm !rounded-full" aria-label="Ajustar à janela" data-tip="Ajustar à janela" data-keys="0"><svg class="ic"><use href="#i-maximize"/></svg></button>
         </div>
       </div>
     </div>
 
-    <!-- Histórico flutuante -->
-    <div class="pointer-events-none absolute bottom-[204px] left-4 top-7 z-20 flex items-center">
+    <!-- Versões da sessão -->
+    <div class="pointer-events-none absolute bottom-[calc(var(--dock)+36px)] left-4 top-6 z-20 flex items-center">
       <div id="strip" class="slide-l pop pointer-events-auto max-h-full" data-open="false">
-        <div class="glass rounded-[16px] p-2">
-          <div id="railList" role="listbox" aria-label="Versões da imagem" class="no-scrollbar flex max-h-[calc(100vh-340px)] flex-col gap-2.5 overflow-y-auto p-1"></div>
+        <div class="glass rounded-[16px] p-1.5">
+          <div id="railList" role="listbox" aria-label="Versões da imagem" class="no-scrollbar flex max-h-[calc(100vh-280px)] flex-col gap-2 overflow-y-auto p-1"></div>
         </div>
       </div>
     </div>
 
     <!-- Estado vazio -->
-    <div id="empty" class="absolute inset-x-0 top-0 bottom-[128px] z-10 flex flex-col items-center justify-center overflow-hidden p-6">
+    <div id="empty" class="absolute inset-0 z-10 flex flex-col items-center justify-center overflow-hidden p-6">
       <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 50% 45% at 50% 38%, rgb(var(--accent) / .11), transparent 70%)"></div>
       <button id="stack" class="relative mb-9 h-[250px] w-[460px] shrink-0 rounded-2xl" aria-label="Usar imagem de exemplo" data-tip="Usar imagem de exemplo" data-tip-pos="top">
         <span class="card c1"></span><span class="card c2"></span><span class="card c3"></span>
@@ -300,41 +300,47 @@
       <h1 class="relative text-center text-[28px] font-semibold leading-tight tracking-[-.025em]">Edite fotos com uma frase.</h1>
       <p class="relative mt-2 text-center text-[15px] text-mute">Solte uma imagem aqui, cole com <span data-kbd="mod+V" class="inline-flex align-middle"></span> ou escolha um arquivo.</p>
       <div class="relative mt-6 flex items-center gap-2">
-        <button id="emptyOpen" class="btn-primary !h-9 !rounded-[10px] !px-4 !text-[13px]"><svg class="ic"><use href="#i-image-plus"/></svg>Abrir imagem<span data-kbd="mod+O" class="ml-1 flex gap-0.5 opacity-60 [&_.kbd]:!bg-black/10 [&_.kbd]:!text-inherit"></span></button>
-        <button id="emptySample" class="btn-quiet !h-9 !rounded-[10px] !px-4"><svg class="ic"><use href="#i-image"/></svg>Usar exemplo</button>
+        <button id="emptyOpen" class="btn-primary !h-9 !rounded-[11px] !px-4"><svg class="ic"><use href="#i-image-plus"/></svg>Abrir imagem<span data-kbd="mod+O" class="ml-1 flex gap-0.5 opacity-60 [&_.kbd]:!bg-black/10 [&_.kbd]:!text-inherit"></span></button>
+        <button id="emptySample" class="btn-quiet !h-9 !rounded-[11px] !px-4"><svg class="ic"><use href="#i-image"/></svg>Usar exemplo</button>
       </div>
       <p class="relative mt-5 text-[11px] text-faint">PNG, JPG ou WebP · até 20 MB · <span data-kbd="mod+K" class="inline-flex align-middle"></span> para comandos</p>
     </div>
 
-    <!-- Dock de prompt -->
-    <div id="promptDock" class="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex justify-center px-6">
-      <div class="pointer-events-auto relative w-full max-w-[680px]">
+    <!-- Compositor -->
+    <div id="promptDock" class="pointer-events-none absolute bottom-5 left-0 right-[var(--side)] z-20 hidden justify-center px-4">
+      <div class="pointer-events-auto relative w-full max-w-[720px]">
 
-        <div id="versionPrompt" class="hidden mb-2 max-h-[72px] overflow-y-auto px-1 py-2">
-          <div class="flex items-center justify-between gap-3"><span class="text-[12px] font-medium text-mute">Prompt desta edição <span id="executionTime" class="tabular-nums"></span></span><button id="reuseVersionPrompt" class="btn-quiet !h-7 !px-2.5">Reutilizar</button></div>
-          <p id="versionPromptText" class="mt-1 whitespace-pre-wrap break-words text-[13px] leading-relaxed"></p>
+        <!-- Prompt da edição exibida: uma linha; clique para ler inteiro -->
+        <div id="versionPrompt" class="invisible mb-1 flex h-8 items-center gap-1 px-1">
+          <button id="versionPromptBtn" class="flex h-7 min-w-0 flex-1 items-center gap-2 rounded-[8px] px-2 text-left text-[12px] text-mute hover:bg-line/[.06] hover:text-ink active:bg-line/[.1]" aria-haspopup="dialog" aria-expanded="false" aria-controls="popFull" data-tip="Ler o prompt completo" data-tip-pos="top">
+            <span class="shrink-0">Prompt<span id="executionTime" class="tabular-nums"></span></span>
+            <span id="versionPromptLine" class="truncate text-ink/80"></span>
+          </button>
+          <button id="reuseVersionPrompt" class="btn-ghost btn-sm" data-tip="Usar este prompt na próxima edição" data-tip-pos="top"><svg class="ic ic-sm"><use href="#i-corner-up-left"/></svg>Reutilizar</button>
         </div>
-        <div id="looks" class="hidden no-scrollbar mb-2 flex gap-3 overflow-x-auto py-2" aria-label="Presets de edição"></div>
 
-        <div class="mb-2 flex flex-wrap items-center gap-2">
-          <button id="referenceBtn" class="btn-quiet !h-8 !px-3">Adicionar referência</button>
-          <input id="referenceFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-          <button id="toggleLooks" class="btn-quiet !h-8 !px-3" aria-expanded="false" aria-controls="looks">Presets</button>
-          <button id="cancelEnhance" class="btn-quiet !h-8 !px-3 hidden">Cancelar IA</button>
+        <!-- Prompt completo -->
+        <div id="popFull" class="pop absolute bottom-full left-0 right-0 z-30 mb-2" data-open="false">
+          <div class="pop-panel glass rounded-[18px] p-4" style="--glass-a:.92" role="dialog" aria-label="Prompt desta edição">
+            <p class="label mb-2">Prompt desta edição</p>
+            <p id="versionPromptText" class="scroll-thin max-h-[40vh] select-text overflow-y-auto whitespace-pre-wrap break-words text-[13px] leading-relaxed"></p>
+          </div>
         </div>
-        <p id="promptAiStatus" class="mb-2 text-[12px] leading-relaxed text-mute" role="status">IA opcional de texto na CPU; não analisa a foto. Primeiro uso baixa o modelo (~1,2 GB) e dependências.</p>
-        <div id="promptSuggestion" class="hidden mb-3 rounded-[12px] bg-line/[.06] p-3">
-          <label for="suggestionText" class="label mb-2 block">Sugestão da IA · revise antes de usar</label>
-          <textarea id="suggestionText" rows="4" class="w-full resize-y rounded-md bg-bg p-2 text-[13px] leading-relaxed" aria-label="Sugestão de prompt"></textarea>
-          <div class="mt-2 flex gap-2"><button id="applySuggestion" class="btn-quiet">Usar sugestão</button><button id="discardSuggestion" class="btn-quiet">Descartar</button></div>
+
+        <!-- Presets -->
+        <div id="popLooks" class="pop absolute bottom-full left-0 z-30 mb-2 w-[min(100%,460px)]" data-open="false">
+          <div class="pop-panel glass rounded-[18px] p-3" style="transform-origin:0 100%;--glass-a:.92" role="dialog" aria-label="Presets de edição">
+            <p class="px-1 pb-2.5 text-[12px] text-mute">Escolha um ponto de partida. O texto fica editável antes de gerar.</p>
+            <div id="looks" class="grid grid-cols-3 gap-2" aria-label="Presets de edição"></div>
+          </div>
         </div>
 
         <!-- Ajustes -->
-        <div id="pop" class="pop absolute bottom-full left-0 z-30 mb-3" data-open="false">
-          <div class="pop-panel glass w-[316px] rounded-[18px] p-4" style="transform-origin:0 100%;--glass-a:.92" role="dialog" aria-label="Ajustes de geração">
+        <div id="pop" class="pop absolute bottom-full right-0 z-30 mb-2" data-open="false">
+          <div class="pop-panel glass w-[320px] rounded-[18px] p-4" style="transform-origin:100% 100%;--glass-a:.92" role="dialog" aria-label="Ajustes de geração">
             <div class="mb-3 flex items-center justify-between">
               <span class="text-[13px] font-semibold tracking-[-.012em]">Ajustes</span>
-              <button id="resetSettings" class="icon-btn !h-6 !w-6" aria-label="Restaurar padrões" data-tip="Restaurar padrões"><svg class="ic" style="width:14px;height:14px"><use href="#i-rotate"/></svg></button>
+              <button id="resetSettings" class="icon-btn icon-btn-sm" aria-label="Restaurar padrões" data-tip="Restaurar padrões"><svg class="ic ic-sm"><use href="#i-rotate"/></svg></button>
             </div>
             <div class="space-y-4">
               <div>
@@ -344,14 +350,14 @@
               </div>
               <div>
                 <div class="label mb-1.5" id="nLabel">Variações</div>
-                <div id="nSeg" class="relative grid grid-cols-3 rounded-[10px] bg-line/[.07] p-0.5" role="radiogroup" aria-labelledby="nLabel"></div>
+                <div id="nSeg" class="seg grid-cols-3" role="radiogroup" aria-labelledby="nLabel"></div>
               </div>
               <div>
                 <label class="label mb-1.5 block" for="seed">Semente</label>
                 <div class="flex items-center gap-1.5">
                   <div class="relative flex-1">
                     <input id="seed" class="field pr-8 tabular-nums" inputmode="numeric" autocomplete="off" placeholder="Aleatória">
-                    <button id="seedClear" class="absolute right-1.5 top-1.5 hidden h-6 w-6 items-center justify-center rounded-md text-mute hover:bg-line/[.1] hover:text-ink" aria-label="Voltar para semente aleatória" data-tip="Aleatória"><svg class="ic" style="width:14px;height:14px"><use href="#i-x"/></svg></button>
+                    <button id="seedClear" class="icon-btn icon-btn-sm absolute right-1 top-1 hidden" aria-label="Voltar para semente aleatória" data-tip="Aleatória"><svg class="ic ic-sm"><use href="#i-x"/></svg></button>
                   </div>
                   <button id="dice" class="icon-btn !h-9 !w-9 bg-line/[.06]" aria-label="Sortear semente" data-tip="Sortear"><svg class="ic"><use href="#i-dice"/></svg></button>
                 </div>
@@ -364,30 +370,65 @@
             </div>
             <div class="mt-4 flex items-center justify-between gap-3 border-t border-line/[.08] pt-3 text-[11px] text-faint">
               <span id="popWf" class="truncate">Modo demonstração</span>
-              <button id="popAdv" class="shrink-0 rounded-md px-1.5 py-1 font-medium text-mute hover:bg-line/[.08] hover:text-ink">Avançado…</button>
+              <button id="popAdv" class="btn-ghost btn-sm shrink-0">Avançado…</button>
             </div>
           </div>
         </div>
 
         <!-- Barra -->
-        <div id="bar" class="glass relative rounded-[22px] transition-transform duration-200" data-busy="false">
-          <div id="referenceInfo" class="hidden relative ml-4 mt-3 w-fit">
-            <img id="referencePreview" alt="Referência <image2>" class="h-16 w-16 rounded-[10px] object-cover">
-            <button id="removeReference" class="icon-btn absolute right-0 top-0 !h-6 !w-6 bg-bg" aria-label="Remover referência" data-tip="Remover referência"><svg class="ic"><use href="#i-x"/></svg></button>
-            <span class="absolute inset-x-0 bottom-0 rounded-b-[10px] bg-bg/80 text-center text-[10px]">&lt;image2&gt;</span>
-          </div>
+        <div id="bar" class="glass relative rounded-[22px]" data-busy="false">
           <span class="aura-ring" aria-hidden="true"><span></span></span>
-          <div class="relative flex items-end gap-1 py-2 pl-4 pr-2">
-            <button id="enhancePrompt" class="icon-btn !h-9 !w-9 shrink-0" aria-label="Melhorar prompt com IA" data-tip="Melhorar prompt com IA"><svg id="sparkle" class="ic text-faint"><use href="#i-sparkles"/></svg></button>
+
+          <!-- IA de texto: andamento e sugestão -->
+          <div id="aiRun" class="relative hidden">
+            <div class="flex items-center gap-2 px-4 pt-3 text-[12px] text-mute" role="status" aria-live="polite">
+              <svg class="ic ic-sm spin text-accent"><use href="#i-loader"/></svg>
+              <span id="promptAiStatus" class="min-w-0 flex-1 truncate">Aprimorando o texto…</span>
+              <button id="cancelEnhance" class="btn-ghost btn-sm">Cancelar</button>
+            </div>
+          </div>
+          <div id="promptSuggestion" class="relative hidden px-3 pt-3">
+            <div class="rounded-[14px] bg-line/[.06] p-3">
+              <label for="suggestionText" class="label mb-1.5 flex items-center gap-1.5"><svg class="ic ic-sm text-accent"><use href="#i-wand"/></svg>Sugestão da IA · revise antes de usar</label>
+              <textarea id="suggestionText" rows="4" class="scroll-thin w-full select-text resize-y rounded-[10px] bg-bg/70 p-2.5 text-[13px] leading-relaxed" style="box-shadow:inset 0 0 0 .5px rgb(var(--line) / .14)" aria-label="Sugestão de prompt"></textarea>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="min-w-0 flex-1 text-[11px] text-faint">Gerada só pelo texto; a IA não analisa a foto.</span>
+                <button id="discardSuggestion" class="btn-quiet btn-sm">Descartar</button>
+                <button id="applySuggestion" class="btn-primary btn-sm">Usar sugestão</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Referência <image2> -->
+          <div id="referenceInfo" class="relative hidden px-4 pt-3">
+            <div class="inline-flex h-9 items-center gap-1 rounded-[11px] bg-line/[.07] pl-1 pr-1">
+              <button id="referenceTag" class="flex h-7 items-center gap-2 rounded-[8px] pl-0.5 pr-2 text-[12px] font-medium hover:bg-line/[.08] active:scale-[.97]" data-tip="Inserir &lt;image2&gt; no prompt" data-tip-pos="top" aria-label="Inserir &lt;image2&gt; no prompt">
+                <img id="referencePreview" alt="Referência &lt;image2&gt;" class="h-6 w-6 rounded-[6px] object-cover">
+                <span>&lt;image2&gt;</span>
+              </button>
+              <button id="removeReference" class="icon-btn icon-btn-sm !h-6 !w-6" aria-label="Remover referência" data-tip="Remover referência" data-tip-pos="top"><svg class="ic ic-sm"><use href="#i-x"/></svg></button>
+            </div>
+          </div>
+
+          <!-- Texto -->
+          <div class="relative flex items-start gap-1 pl-4 pr-2 pt-3">
             <textarea id="prompt" rows="1" aria-label="Descreva a edição" spellcheck="true" autocomplete="off"
-                      class="max-h-32 min-h-9 flex-1 resize-none bg-transparent py-2 text-[15px] leading-5 tracking-[-.011em] placeholder:text-faint select-text"></textarea>
-            <span id="counter" class="absolute right-3 top-full mt-1 hidden text-[11px] tabular-nums text-mute"></span>
-            <button id="clearPrompt" class="icon-btn !h-9 !w-9 shrink-0" aria-label="Limpar prompt" data-tip="Limpar prompt"><svg class="ic"><use href="#i-broom"/></svg></button>
-            <button id="settingsBtn" class="icon-btn !h-9 !w-9 shrink-0" aria-haspopup="dialog" aria-expanded="false" aria-controls="pop" data-tip="Ajustes" aria-label="Ajustes de geração">
+                      class="max-h-40 min-h-7 flex-1 resize-none bg-transparent py-1 text-[15px] leading-6 tracking-[-.011em] placeholder:text-faint select-text"></textarea>
+            <button id="clearPrompt" class="icon-btn icon-btn-sm shrink-0" aria-label="Limpar prompt" data-tip="Limpar prompt"><svg class="ic"><use href="#i-circle-x"/></svg></button>
+          </div>
+
+          <!-- Ações -->
+          <div class="relative flex items-center gap-0.5 p-2">
+            <input id="referenceFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+            <button id="referenceBtn" class="btn-ghost" data-tip="Adicionar imagem de referência (&lt;image2&gt;)" data-tip-pos="top"><svg class="ic"><use href="#i-image-plus"/></svg><span class="hidden sm:inline">Referência</span></button>
+            <button id="toggleLooks" class="btn-ghost" aria-expanded="false" aria-controls="popLooks" aria-haspopup="dialog" data-tip="Presets de edição" data-tip-pos="top"><svg class="ic"><use href="#i-palette"/></svg><span class="hidden sm:inline">Presets</span></button>
+            <button id="enhancePrompt" class="btn-ghost" data-tip="Melhorar prompt com IA" data-tip-pos="top" aria-label="Melhorar prompt com IA"><svg class="ic"><use href="#i-wand"/></svg><span class="hidden sm:inline">Melhorar</span></button>
+            <span class="flex-1"></span>
+            <button id="settingsBtn" class="icon-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="pop" data-tip="Ajustes" data-tip-pos="top" aria-label="Ajustes de geração">
               <svg class="ic"><use href="#i-sliders"/></svg>
-              <span id="dot" class="absolute right-2 top-2 hidden h-1.5 w-1.5 rounded-full bg-accent"></span>
+              <span id="dot" class="absolute right-1.5 top-1.5 hidden h-1.5 w-1.5 rounded-full bg-accent"></span>
             </button>
-            <button id="genBtn" class="btn-primary !h-9 shrink-0 !rounded-[12px] !px-4" data-state="disabled" aria-disabled="true" data-tip="Descreva a edição para gerar">
+            <button id="genBtn" class="btn-primary ml-1 !h-9 !rounded-[12px] !px-4" data-state="disabled" aria-disabled="true" data-tip="Descreva a edição para gerar" data-tip-pos="top">
               <svg class="ic" id="genIcon"><use href="#i-sparkles"/></svg><span id="genText">Gerar</span>
             </button>
           </div>
@@ -411,7 +452,6 @@
     <div class="flex h-9 items-center gap-4 border-t border-line/[.08] px-5 text-[11px] text-faint">
       <span class="flex items-center gap-1.5"><span class="kbd">↑</span><span class="kbd">↓</span>navegar</span>
       <span class="flex items-center gap-1.5"><span class="kbd">↵</span>executar</span>
-      <span class="flex items-center gap-1.5"><span class="kbd">esc</span>fechar</span>
     </div>
   </div>
 </div>
@@ -419,37 +459,40 @@
 <!-- Configurações avançadas -->
 <div id="adv" class="pop fixed inset-0 z-50" data-open="false">
   <div class="absolute inset-0 bg-black/40 backdrop-blur-[3px]" data-close-adv></div>
-  <div class="pop-panel glass relative mx-auto mt-[6vh] flex max-h-[88vh] w-[min(700px,calc(100vw-32px))] flex-col overflow-hidden rounded-[20px]" style="transform-origin:50% 0;--glass-a:.95" role="dialog" aria-modal="true" aria-labelledby="advTitle">
+  <div class="pop-panel glass relative mx-auto mt-[6vh] flex max-h-[88vh] w-[min(640px,calc(100vw-32px))] flex-col overflow-hidden rounded-[20px]" style="transform-origin:50% 0;--glass-a:.95" role="dialog" aria-modal="true" aria-labelledby="advTitle">
     <header class="flex h-14 shrink-0 items-center justify-between border-b border-line/[.08] pl-5 pr-3">
       <h2 id="advTitle" class="text-[15px] font-semibold tracking-[-.012em]">Configurações avançadas</h2>
       <button id="advClose" class="icon-btn" aria-label="Fechar" data-tip="Fechar" data-keys="Esc"><svg class="ic"><use href="#i-x"/></svg></button>
     </header>
-    <div class="no-scrollbar space-y-7 overflow-y-auto px-5 py-5">
+    <div id="advBody" class="scroll-thin space-y-6 overflow-y-auto px-5 py-5">
 
       <section aria-labelledby="secEngine">
-        <h3 id="secEngine" class="mb-3 text-[13px] font-semibold">Motor local</h3>
-        <p class="text-[13px] leading-relaxed text-mute">O app prepara e inicia seu próprio motor de edição. No primeiro uso, baixa as dependências e os modelos escolhidos abaixo. Depois, as edições funcionam sem internet.</p>
-        <p id="advUrlMsg" role="status" aria-live="polite" class="mt-2 flex min-h-[18px] items-center gap-1.5 text-[12px] text-mute"></p>
-        <button id="advStart" class="btn-quiet mt-3 !h-9"><svg class="ic"><use href="#i-play"/></svg>Preparar motor local</button>
+        <h3 id="secEngine" class="section-title">Motor local</h3>
+        <div class="flex items-center gap-3 rounded-[14px] bg-line/[.05] p-3.5">
+          <span id="advDot" class="h-2 w-2 shrink-0 rounded-full bg-faint"></span>
+          <p id="advUrlMsg" role="status" aria-live="polite" class="min-w-0 flex-1 text-[13px] leading-snug"></p>
+          <button id="advStart" class="btn-quiet"><svg class="ic"><use href="#i-play"/></svg><span>Preparar motor local</span></button>
+        </div>
+        <p class="mt-2 px-1 text-[12px] leading-relaxed text-faint">O app prepara e inicia o próprio motor. O primeiro uso baixa dependências e modelos; depois, as edições funcionam sem internet.</p>
       </section>
 
       <section aria-labelledby="secWf">
-        <div class="mb-3 flex items-center justify-between">
-          <h3 id="secWf" class="text-[13px] font-semibold">Workflow</h3>
-          <button id="wfImport" class="btn-quiet !h-7 !px-2.5 !text-[12px]"><svg class="ic" style="width:14px;height:14px"><use href="#i-upload"/></svg>Importar JSON</button>
+        <div class="mb-2 flex items-center justify-between">
+          <h3 id="secWf" class="section-title !mb-0">Workflow</h3>
+          <button id="wfImport" class="btn-ghost btn-sm"><svg class="ic ic-sm"><use href="#i-upload"/></svg>Importar JSON</button>
           <input id="wfFile" type="file" accept="application/json,.json" hidden>
         </div>
         <div id="wfList" role="radiogroup" aria-labelledby="secWf" class="space-y-2"></div>
-        <p class="mt-2.5 text-[11px] leading-relaxed text-faint">Importe um workflow exportado do ComfyUI em <b class="font-medium text-mute">Save (API Format)</b>. O app encontra sozinho onde ficam a imagem, o prompt e a semente. Pasta dos seus workflows: <span id="wfDir" class="select-text font-mono"></span></p>
+        <p class="mt-2.5 px-1 text-[11px] leading-relaxed text-faint">Importe um workflow exportado do ComfyUI em <b class="font-medium text-mute">Save (API Format)</b>. O app encontra sozinho onde ficam a imagem, o prompt e a semente. Pasta dos seus workflows: <span id="wfDir" class="select-text font-mono"></span></p>
       </section>
 
       <section id="secModels" aria-labelledby="secModelsT" class="hidden">
-        <h3 id="secModelsT" class="mb-3 text-[13px] font-semibold">Modelos e memória</h3>
+        <h3 id="secModelsT" class="section-title">Modelos e memória</h3>
         <div id="modelOptions" class="space-y-4"></div>
       </section>
 
       <section id="secParams" aria-labelledby="secParamsT" class="hidden">
-        <h3 id="secParamsT" class="mb-3 text-[13px] font-semibold">Parâmetros do workflow</h3>
+        <h3 id="secParamsT" class="section-title">Parâmetros do workflow</h3>
         <div id="wfParams" class="space-y-4"></div>
       </section>
     </div>
@@ -461,24 +504,31 @@
   <div class="glass flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-medium"><svg class="ic"><use href="#i-image-plus"/></svg><span id="dropText">Solte para abrir</span></div>
 </div>
 
-<aside id="historyPanel" hidden class="fixed bottom-0 right-0 top-[52px] z-40 flex w-full max-w-[440px] flex-col border-l border-line/[.12] bg-bg" aria-labelledby="historyTitle">
-  <div class="flex items-center justify-between gap-3 px-5 pb-3 pt-5"><h2 id="historyTitle" class="text-[17px] font-semibold">Histórico de edições</h2><button id="historyClose" class="icon-btn" aria-label="Fechar histórico"><svg class="ic"><use href="#i-x"/></svg></button></div>
-  <p class="px-5 pb-4 text-[13px] leading-relaxed text-mute">Imagens e prompts salvos neste computador, disponíveis mesmo depois de fechar o app.</p>
-  <div class="min-h-0 flex-1 overflow-y-auto px-5 pb-5"><p id="historyMessage" class="py-5 text-[13px] text-mute" role="status"></p><div id="historyList" class="divide-y divide-line/[.12]"></div><button id="historyMore" hidden class="btn-quiet mt-4 w-full">Carregar mais</button></div>
+<!-- Histórico persistente -->
+<aside id="historyPanel" hidden class="glass fixed bottom-3 right-3 top-[60px] z-40 flex w-[min(400px,calc(100vw-24px))] flex-col overflow-hidden rounded-[20px]" style="--glass-a:.88" aria-labelledby="historyTitle">
+  <div class="flex h-14 shrink-0 items-center justify-between border-b border-line/[.08] pl-5 pr-3">
+    <div class="min-w-0"><h2 id="historyTitle" class="text-[15px] font-semibold tracking-[-.012em]">Histórico</h2><p class="text-[11px] text-faint">Salvo neste computador, mesmo depois de fechar o app.</p></div>
+    <button id="historyClose" class="icon-btn" aria-label="Fechar histórico" data-tip="Fechar" data-keys="Esc"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="scroll-thin min-h-0 flex-1 overflow-y-auto p-3">
+    <p id="historyMessage" class="px-4 py-10 text-center text-[13px] leading-relaxed text-mute" role="status"></p>
+    <div id="historyList" class="space-y-1.5"></div>
+    <button id="historyMore" hidden class="btn-quiet mt-3 w-full">Carregar mais</button>
+  </div>
 </aside>
 
 <!-- Toast -->
-<div id="toast" class="pop fixed left-1/2 top-16 z-[60] -translate-x-1/2" data-open="false" role="status" aria-live="polite">
+<div id="toast" class="pop fixed left-1/2 top-14 z-[60] -translate-x-1/2" data-open="false" role="status" aria-live="polite">
   <div class="pop-panel glass flex max-w-[calc(100vw-32px)] items-center gap-2.5 rounded-[14px] py-1.5 pl-3.5 pr-1.5" style="transform-origin:50% 0;--glass-a:.9">
     <span id="toastIcon" class="flex"></span>
     <span id="toastText" class="text-[13px] font-medium"></span>
-    <button id="toastAction" class="btn-quiet !h-7 !px-2.5" hidden></button>
-    <button id="toastClose" class="icon-btn !h-7 !w-7" aria-label="Fechar aviso"><svg class="ic" style="width:14px;height:14px"><use href="#i-x"/></svg></button>
+    <button id="toastAction" class="btn-quiet btn-sm" hidden></button>
+    <button id="toastClose" class="icon-btn icon-btn-sm" aria-label="Fechar aviso"><svg class="ic ic-sm"><use href="#i-x"/></svg></button>
   </div>
 </div>
 
 <!-- Tooltip -->
-<div id="tip" class="pointer-events-none fixed left-0 top-0 z-[70] flex max-w-[260px] items-center gap-2 rounded-lg bg-ink px-2.5 py-1.5 text-[12px] font-medium leading-snug text-bg opacity-0 shadow-[0_8px_24px_rgb(0_0_0/.35)] transition-opacity duration-100" role="tooltip"></div>
+<div id="tip" class="pointer-events-none fixed left-0 top-0 z-[70] flex max-w-[280px] items-center gap-2 rounded-lg bg-ink px-2.5 py-1.5 text-[12px] font-medium leading-snug text-bg opacity-0 shadow-[0_8px_24px_rgb(0_0_0/.35)] transition-opacity duration-100" role="tooltip"></div>
 
 <input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
 
@@ -569,43 +619,70 @@ document.addEventListener('focusin', e => { const el = e.target.closest?.('[data
 document.addEventListener('focusout', hideTip);
 document.addEventListener('pointerdown', hideTip);
 
-const promptAI = {busy:false, job:null, timer:null};
-$('#clearPrompt').onclick = () => { const previous=promptEl.value; setPrompt(''); toast({text:'Prompt limpo',action:{label:'Desfazer',icon:'undo',run:()=>setPrompt(previous)}}); };
+const promptAI = { busy: false, job: null, timer: null };
+$('#clearPrompt').onclick = () => { const previous = promptEl.value; setPrompt(''); toast({ text: 'Prompt limpo', action: { label: 'Desfazer', icon: 'undo', run: () => setPrompt(previous) } }); };
 $('#referenceBtn').onclick = () => $('#referenceFile').click();
 $('#referenceFile').onchange = async e => {
-  const file=e.target.files[0]; e.target.value=''; if (!file) return;
-  if (!isImageFile(file) || file.size > MAX_BYTES) return toast({kind:'error',text:'Use PNG, JPG ou WebP de até 20 MB para a referência.'});
-  try { await imageSize(file); if (S.reference) URL.revokeObjectURL(S.reference.url); S.reference={blob:file,name:file.name,url:URL.createObjectURL(file)}; renderReference(); }
-  catch (err) { toast({kind:'error',text:err.message}); }
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  if (!isImageFile(file) || file.size > MAX_BYTES) return toast({ kind: 'error', text: 'Use PNG, JPG ou WebP de até 20 MB para a referência.' });
+  try {
+    await imageSize(file);
+    if (S.reference) URL.revokeObjectURL(S.reference.url);
+    S.reference = { blob: file, name: file.name, url: URL.createObjectURL(file) };
+    renderReference(); promptEl.focus();
+  } catch (err) { toast({ kind: 'error', text: err.message }); }
 };
 function renderReference() {
   $('#referenceInfo').classList.toggle('hidden', !S.reference);
-  if (S.reference) { $('#referencePreview').src=S.reference.url; $('#referencePreview').title=S.reference.name; }
+  if (S.reference) { $('#referencePreview').src = S.reference.url; $('#referencePreview').title = S.reference.name; }
   else $('#referencePreview').removeAttribute('src');
   syncPrompt();
 }
-$('#removeReference').onclick=()=>{if(S.reference)URL.revokeObjectURL(S.reference.url);S.reference=null;renderReference();};
+function removeReference() {
+  if (!S.reference) return;
+  const gone = S.reference; S.reference = null; renderReference();
+  toast({ text: 'Referência removida', action: { label: 'Desfazer', icon: 'undo', run: () => { S.reference = gone; renderReference(); } } });
+  setTimeout(() => URL.revokeObjectURL(gone.url), 9000);
+}
+$('#removeReference').onclick = removeReference;
+/* Insere a tag <image2> onde está o cursor, sem impor função à referência. */
+$('#referenceTag').onclick = () => {
+  const el = promptEl, tag = '<image2>', a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a;
+  const pad = a > 0 && !/\s/.test(el.value[a - 1]) ? ' ' : '';
+  el.value = el.value.slice(0, a) + pad + tag + el.value.slice(b);
+  const pos = a + pad.length + tag.length; syncPrompt(); el.focus(); el.setSelectionRange(pos, pos);
+};
 async function pollPromptAI() {
   try {
-    const job=await api(`/api/prompt/jobs/${promptAI.job}`);
-    $('#promptAiStatus').textContent=job.phase;
-    if(job.state==='running') {promptAI.timer=setTimeout(pollPromptAI,1000);return;}
-    promptAI.busy=false;
-    if(job.state==='done') {$('#suggestionText').value=job.prompt;$('#promptSuggestion').classList.remove('hidden');}
-    else if(job.state==='error') toast({kind:'error',text:job.error});
+    const job = await api(`/api/prompt/jobs/${promptAI.job}`);
+    $('#promptAiStatus').textContent = job.phase;
+    if (job.state === 'running') { promptAI.timer = setTimeout(pollPromptAI, 1000); return; }
+    promptAI.busy = false;
+    if (job.state === 'done') { $('#suggestionText').value = job.prompt; $('#promptSuggestion').classList.remove('hidden'); setTimeout(() => $('#suggestionText').focus(), 0); }
+    else if (job.state === 'error') toast({ kind: 'error', text: job.error });
     syncPrompt();
-  } catch(err) {promptAI.busy=false;syncPrompt();toast({kind:'error',text:err.message});}
+  } catch (err) { promptAI.busy = false; syncPrompt(); toast({ kind: 'error', text: err.message }); }
 }
-$('#enhancePrompt').onclick=async()=>{
-  if(promptAI.busy || !promptEl.value.trim())return;
-  promptAI.busy=true;promptAI.job=null;syncPrompt();$('#promptSuggestion').classList.add('hidden');
-  try {const job=await api('/api/prompt/enhance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:promptEl.value,has_reference:!!S.reference})});promptAI.job=job.id;syncPrompt();pollPromptAI();}
-  catch(err){promptAI.busy=false;syncPrompt();toast({kind:'error',text:err.message});}
+$('#enhancePrompt').onclick = async () => {
+  if (promptAI.busy || !promptEl.value.trim()) return;
+  promptAI.busy = true; promptAI.job = null; $('#promptAiStatus').textContent = 'Preparando a IA de texto…'; syncPrompt(); $('#promptSuggestion').classList.add('hidden');
+  try {
+    const job = await api('/api/prompt/enhance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: promptEl.value, has_reference: !!S.reference }) });
+    promptAI.job = job.id; syncPrompt(); pollPromptAI();
+  } catch (err) { promptAI.busy = false; syncPrompt(); toast({ kind: 'error', text: err.message }); }
 };
-$('#cancelEnhance').onclick=async()=>{try{await api(`/api/prompt/jobs/${promptAI.job}`,{method:'DELETE'});clearTimeout(promptAI.timer);promptAI.busy=false;$('#promptAiStatus').textContent='Aprimoramento cancelado. O prompt original foi mantido.';syncPrompt();}catch(err){toast({kind:'error',text:err.message});}};
-$('#applySuggestion').onclick=()=>{const previous=promptEl.value;setPrompt($('#suggestionText').value);$('#promptSuggestion').classList.add('hidden');toast({text:'Sugestão aplicada',action:{label:'Desfazer',icon:'undo',run:()=>setPrompt(previous)}});};
-$('#discardSuggestion').onclick=()=>{$('#promptSuggestion').classList.add('hidden');};
-new ResizeObserver(()=>{const height=$('#promptDock').offsetHeight;$('#fitbox').style.bottom=(height+44)+'px';$('#empty').style.bottom=(height+44)+'px';$('#stack').classList.toggle('hidden', $('#stage').clientHeight-height<440);}).observe($('#promptDock'));
+$('#cancelEnhance').onclick = async () => {
+  try { await api(`/api/prompt/jobs/${promptAI.job}`, { method: 'DELETE' }); clearTimeout(promptAI.timer); promptAI.busy = false; syncPrompt(); toast({ text: 'Aprimoramento cancelado. O prompt original foi mantido.' }); }
+  catch (err) { toast({ kind: 'error', text: err.message }); }
+};
+$('#applySuggestion').onclick = () => { const previous = promptEl.value; setPrompt($('#suggestionText').value); $('#promptSuggestion').classList.add('hidden'); toast({ text: 'Sugestão aplicada', action: { label: 'Desfazer', icon: 'undo', run: () => setPrompt(previous) } }); };
+$('#discardSuggestion').onclick = () => { $('#promptSuggestion').classList.add('hidden'); promptEl.focus(); };
+/* O palco reserva exatamente a altura do compositor: nada pula quando ele cresce. */
+new ResizeObserver(() => {
+  const height = $('#promptDock').offsetHeight;
+  $('#stage').style.setProperty('--dock', height + 'px');
+}).observe($('#promptDock'));
+new ResizeObserver(() => $('#stack').classList.toggle('hidden', $('#stage').clientHeight < 600)).observe($('#stage'));
 
 /* ───────────────────────── imagem: carregar / amostra ───────────────────────── */
 function loadImage(url) {
@@ -974,23 +1051,27 @@ $('#railList').addEventListener('click', e => {
 function renderChrome() {
   const has = hasImg();
   $('#titleWrap').classList.toggle('invisible', !has);
+  const dock = $('#promptDock'); dock.classList.toggle('hidden', !has); dock.classList.toggle('flex', has);
+  if (!has) closePops();
   const nameEl = $('#name'); if (document.activeElement !== nameEl) nameEl.value = S.name; sizeName();
   const v = cur();
   const edited = v?.kind === 'edit';
-  $('#versionPrompt').classList.toggle('hidden', !edited);
-  $('#executionTime').textContent = edited && Number.isFinite(v.metadata?.duration_seconds) ? `· ${formatDuration(v.metadata.duration_seconds)}` : '';
-  $('#versionPromptText').textContent = edited ? (v.prompt || 'Prompt não registrado nesta imagem.') : '';
+  $('#versionPrompt').classList.toggle('invisible', !edited);
+  $('#executionTime').textContent = edited && Number.isFinite(v.metadata?.duration_seconds) ? ` · ${formatDuration(v.metadata.duration_seconds)}` : '';
+  const shown = edited ? (v.prompt || 'Prompt não registrado nesta imagem.') : '';
+  $('#versionPromptText').textContent = shown; $('#versionPromptLine').textContent = shown;
   $('#reuseVersionPrompt').disabled = !edited || !v.prompt;
+  if (!edited) closePops('popFull');
 
   $('#meta').textContent = v ? `${v.w} × ${v.h} · ${v.kind === 'original' ? 'Original' : S.sel === 0 ? 'Edição salva' : `Versão ${S.sel} de ${S.versions.length - 1}`}` : '';
   $('#undoBtn').disabled = !S.undo.length; $('#redoBtn').disabled = !S.redo.length;
-  $('#copyBtn').disabled = !has; $('#exportBtn').disabled = !has;
-  [['#compareBtn', splitOn(), 'Comparar antes e depois'], ['#sbsBtn', sbsOn(), 'Lado a lado, zoom sincronizado']].forEach(([id, on, tipText]) => {
-    const b = $(id); b.disabled = !canSplit(); b.setAttribute('aria-pressed', String(on));
-    b.classList.toggle('!bg-line/[.12]', on); b.classList.toggle('!text-ink', on);
+  $('#exportBtn').disabled = !has;
+  const mode = sbsOn() ? 'sbs' : splitOn() ? 'split' : 'single';
+  [['#singleBtn', 'single', 'Ver só a edição'], ['#compareBtn', 'split', 'Comparar antes e depois'], ['#sbsBtn', 'sbs', 'Lado a lado, zoom sincronizado']].forEach(([id, m, tipText]) => {
+    const b = $(id); b.disabled = !canSplit(); b.setAttribute('aria-pressed', String(mode === m));
     b.dataset.tip = canSplit() ? tipText : 'Gere uma edição para comparar';
   });
-  const changed = S.settings.strength !== DEFAULTS.strength || S.settings.n !== DEFAULTS.n || S.settings.seed !== '' || S.settings.negative !== '';
+  const changed = (supports('strength') && S.settings.strength !== DEFAULTS.strength) || S.settings.n !== DEFAULTS.n || S.settings.seed !== '' || (supports('negative') && S.settings.negative !== '');
   $('#dot').classList.toggle('hidden', !changed);
   $('#resetSettings').disabled = !changed;
 }
@@ -1015,37 +1096,39 @@ function syncPrompt() {
   const el = promptEl, has = hasImg(), len = el.value.length, empty = !el.value.trim();
   el.disabled = false;
   el.placeholder = S.reference ? 'Ex.: coloque em <image1> o boné branco de <image2>' : !has ? 'Adicione a imagem <image1> para começar' : S.versions.length > 1 ? 'Descreva a próxima edição…' : 'Descreva a edição… ex.: céu mais dramático';
-  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 128) + 'px';
-  const c = $('#counter'); c.classList.toggle('hidden', !len); c.textContent = `${Array.from(el.value).length.toLocaleString('pt-BR')} caracteres`;
+  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px';
   const g = $('#genBtn'), busy = !!S.busy;
-  const state = busy ? 'busy' : (!has || empty || promptAI.busy || (S.reference && !supports('reference'))) ? 'disabled' : 'idle';
+  const refUnsupported = !!S.reference && !supports('reference');
+  const state = busy ? 'busy' : (!has || empty || promptAI.busy || refUnsupported) ? 'disabled' : 'idle';
   g.dataset.state = state; g.setAttribute('aria-disabled', String(state === 'disabled'));
-  g.className = (busy ? 'btn-quiet' : 'btn-primary') + ' !h-9 shrink-0 !rounded-[12px] !px-4' + (state === 'disabled' ? ' !opacity-35 !cursor-not-allowed' : '');
+  g.className = (busy ? 'btn-quiet' : 'btn-primary') + ' ml-1 !h-9 !rounded-[12px] !px-4' + (state === 'disabled' ? ' !opacity-35 !cursor-not-allowed' : '');
   $('#genIcon').innerHTML = `<use href="#i-${busy ? 'square' : 'sparkles'}"/>`;
   $('#genText').textContent = busy ? 'Parar' : 'Gerar';
-  g.dataset.tip = busy ? 'Cancelar geração' : promptAI.busy ? 'Espere o aprimoramento do prompt' : !has ? 'Abra uma imagem primeiro' : empty ? 'Descreva a edição para gerar' : 'Gerar edição';
+  g.dataset.tip = busy ? 'Cancelar geração' : promptAI.busy ? 'Espere o aprimoramento do prompt' : refUnsupported ? 'Este workflow não aceita referência' : !has ? 'Abra uma imagem primeiro' : empty ? 'Descreva a edição para gerar' : 'Gerar edição';
   g.dataset.keys = busy ? 'Esc' : state === 'idle' ? 'Enter' : '';
   g.setAttribute('aria-label', g.dataset.tip);
-  $('#looks').style.opacity = 1; $('#looks').inert = busy || promptAI.busy;
+  $('#looks').inert = busy || promptAI.busy;
   $$('#looks [data-look]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.look === el.value.trim())));
-  $('#bar').style.opacity = 1;
-  $('#clearPrompt').disabled = !len;
-  $('#enhancePrompt').disabled = empty || busy || promptAI.busy || !R.remote;
-  $('#cancelEnhance').classList.toggle('hidden', !promptAI.busy); $('#cancelEnhance').disabled = !promptAI.job;
-  $('#referenceBtn').disabled = busy || promptAI.busy || !R.remote || !supports('reference');
+  $('#clearPrompt').classList.toggle('invisible', !len); $('#clearPrompt').disabled = !len;
+  const enhance = $('#enhancePrompt');
+  enhance.disabled = empty || busy || promptAI.busy || !R.remote;
+  enhance.dataset.tip = !R.remote ? 'Melhorar com IA: disponível no app local' : empty ? 'Escreva uma ideia para melhorá-la com IA' : 'Melhorar o texto com IA na CPU. Não analisa a foto; o primeiro uso baixa ~1,2 GB.';
+  $('#aiRun').classList.toggle('hidden', !promptAI.busy);
+  $('#cancelEnhance').disabled = !promptAI.job;
+  const ref = $('#referenceBtn');
+  ref.disabled = busy || promptAI.busy || !R.remote || !supports('reference');
+  ref.dataset.tip = !R.remote ? 'Referência: disponível no app local' : !supports('reference') ? 'Este workflow não aceita referência' : S.reference ? 'Trocar a imagem de referência (<image2>)' : 'Adicionar imagem de referência (<image2>)';
   $('#removeReference').disabled = busy || promptAI.busy;
-  $('#sparkle').classList.toggle('text-accent', !!S.busy || !empty);
-  $('#sparkle').classList.toggle('text-faint', !S.busy && empty);
+  $('#toggleLooks').disabled = busy || promptAI.busy;
 }
 
-/* Cartões de presets recolhidos por padrão. */
+/* Presets: recolhidos por padrão, abrem em um popover compacto. */
 function renderLooks() {
   const wrap = $('#looks');
-  if (!wrap.children.length) wrap.innerHTML = LOOKS.map(l => `<button class="look" data-look="${esc(l.prompt)}" aria-pressed="false" aria-label="Aplicar look: ${esc(l.label)}"><span class="look-img" style="background:${l.swatch}"><span class="absolute inset-0 grid place-items-center text-white/90">${icon('sparkles')}</span></span><span class="look-label">${esc(l.label)}</span></button>`).join('');
+  if (!wrap.children.length) wrap.innerHTML = LOOKS.map(l => `<button class="look" data-look="${esc(l.prompt)}" aria-pressed="false" aria-label="Aplicar preset: ${esc(l.label)}" style="background:${l.swatch}"><span class="look-label">${esc(l.label)}</span></button>`).join('');
   syncPrompt();
 }
-$('#toggleLooks').onclick = () => { const open = $('#looks').classList.toggle('hidden') === false; $('#toggleLooks').setAttribute('aria-expanded', String(open)); };
-$('#looks').addEventListener('click', e => { const b = e.target.closest('[data-look]'); if (b) setPrompt(b.dataset.look); });
+$('#looks').addEventListener('click', e => { const b = e.target.closest('[data-look]'); if (b) { closePops(); setPrompt(b.dataset.look); } });
 function setPrompt(t) { promptEl.value = t; syncPrompt(); promptEl.focus(); promptEl.setSelectionRange(t.length, t.length); }
 function renderAll() { renderStage(); renderRail(); renderChrome(); renderBusy(); renderLooks(); }
 
@@ -1072,14 +1155,35 @@ promptEl.addEventListener('keydown', e => {
 });
 $('#genBtn').addEventListener('click', () => { if (S.busy) cancelBusy(); else generate(); });
 
-/* ───────────────────────── ajustes (popover) ───────────────────────── */
+/* ───────────────────────── popovers do compositor ───────────────────────── */
+/* Um por vez: prompt completo, presets e ajustes. Esc ou clique fora fecha. */
+const POPS = { popFull: '#versionPromptBtn', popLooks: '#toggleLooks', pop: '#settingsBtn' };
 const pop = $('#pop'), settingsBtn = $('#settingsBtn');
-const popOpen = () => pop.dataset.open === 'true';
-function openPopover() { pop.dataset.open = 'true'; settingsBtn.setAttribute('aria-expanded', 'true'); setTimeout(() => $('#strength').focus(), 0); }
-function closePopover(refocus) { if (!popOpen()) return; pop.dataset.open = 'false'; settingsBtn.setAttribute('aria-expanded', 'false'); if (refocus) settingsBtn.focus(); }
-settingsBtn.onclick = () => popOpen() ? closePopover() : openPopover();
-document.addEventListener('pointerdown', e => { if (popOpen() && !pop.contains(e.target) && !settingsBtn.contains(e.target)) closePopover(); });
-pop.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closePopover(true); } });
+const popOpen = name => name ? $('#' + name).dataset.open === 'true' : Object.keys(POPS).some(n => $('#' + n).dataset.open === 'true');
+function openPop(name) {
+  closePops(null, name);
+  $('#' + name).dataset.open = 'true'; $(POPS[name]).setAttribute('aria-expanded', 'true');
+  if (name === 'pop') setTimeout(() => $('#strength').focus(), 0);
+  if (name === 'popLooks') setTimeout(() => $('#looks button')?.focus(), 0);
+}
+function closePops(only, except) {
+  for (const n of Object.keys(POPS)) {
+    if ((only && typeof only === 'string' && only !== n) || n === except || !popOpen(n)) continue;
+    $('#' + n).dataset.open = 'false'; $(POPS[n]).setAttribute('aria-expanded', 'false');
+    if (only === true) $(POPS[n]).focus();
+  }
+}
+const closePopover = closePops;
+const togglePop = name => popOpen(name) ? closePops(true) : openPop(name);
+settingsBtn.onclick = () => togglePop('pop');
+$('#toggleLooks').onclick = () => togglePop('popLooks');
+$('#versionPromptBtn').onclick = () => togglePop('popFull');
+document.addEventListener('pointerdown', e => {
+  if (!popOpen()) return;
+  for (const n of Object.keys(POPS)) if ($('#' + n).contains(e.target) || $(POPS[n]).contains(e.target)) return;
+  closePops();
+});
+$('#promptDock').addEventListener('keydown', e => { if (e.key === 'Escape' && popOpen()) { e.stopPropagation(); e.preventDefault(); closePops(true); } });
 
 function persist() { save('settings', S.settings); renderChrome(); }
 const strengthEl = $('#strength');
@@ -1088,11 +1192,11 @@ strengthEl.addEventListener('input', () => { S.settings.strength = +strengthEl.v
 
 function buildSegmented() {
   const el = $('#nSeg'), opts = [1, 2, 4];
-  el.innerHTML = `<span id="nThumb" class="absolute inset-y-0.5 left-0.5 w-[calc((100%-4px)/3)] rounded-[8px] shadow-[0_1px_3px_rgb(0_0_0/.25),0_0_0_.5px_rgb(0_0_0/.1)] transition-transform duration-300 ease-out" style="background:rgb(var(--ink)/.14)"></span>` +
-    opts.map(n => `<button role="radio" data-n="${n}" class="relative z-10 h-7 rounded-[8px] text-[13px] font-medium tabular-nums transition-transform duration-150 active:scale-95">${n}</button>`).join('');
+  el.innerHTML = `<span id="nThumb" class="seg-thumb" style="width:calc((100% - 4px)/3)"></span>` +
+    opts.map(n => `<button role="radio" data-n="${n}" class="seg-btn tabular-nums !text-[13px]">${n}</button>`).join('');
   const paint = () => {
     $('#nThumb').style.transform = `translateX(${opts.indexOf(S.settings.n) * 100}%)`;
-    $$('#nSeg [data-n]').forEach(b => { const on = +b.dataset.n === S.settings.n; b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; b.classList.toggle('text-mute', !on); });
+    $$('#nSeg [data-n]').forEach(b => { const on = +b.dataset.n === S.settings.n; b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; });
   };
   el.addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (b) { S.settings.n = +b.dataset.n; paint(); persist(); } });
   el.addEventListener('keydown', e => {
@@ -1131,33 +1235,40 @@ nameEl.addEventListener('blur', () => { const v = nameEl.value.replace(/[\\/:*?"
 let historyItems = [], historyOffset = 0, historyLoading = false;
 function reusePrompt(prompt) { promptEl.value = prompt; syncPrompt(); promptEl.focus(); }
 $('#reuseVersionPrompt').onclick = () => { if (cur()?.kind === 'edit') reusePrompt(cur().prompt || ''); };
-function closeHistory() { $('#historyPanel').hidden = true; $('#historyBtn').setAttribute('aria-expanded', 'false'); $('#historyBtn').focus(); }
-async function openHistory() { $('#historyPanel').hidden = false; $('#historyBtn').setAttribute('aria-expanded', 'true'); $('#historyClose').focus(); await loadHistory(true); }
+function closeHistory() { $('#historyPanel').hidden = true; document.body.dataset.history = 'false'; $('#historyBtn').setAttribute('aria-expanded', 'false'); $('#historyBtn').focus(); }
+async function openHistory() { $('#historyPanel').hidden = false; document.body.dataset.history = 'true'; $('#historyBtn').setAttribute('aria-expanded', 'true'); $('#historyClose').focus(); await loadHistory(true); }
 $('#historyBtn').onclick = () => $('#historyPanel').hidden ? openHistory() : closeHistory();
 $('#historyClose').onclick = closeHistory;
 $('#historyMore').onclick = () => loadHistory(false);
 function renderHistory() {
   $('#historyList').innerHTML = historyItems.map(item => {
-    const date = new Date(item.created_at).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'});
-    return `<article class="py-4"><div class="flex items-start gap-3">
-      <button data-history-open="${esc(item.id)}" class="shrink-0 rounded-[10px] focus-visible:ring-2 focus-visible:ring-accent" aria-label="Abrir ${esc(item.name || 'edição')}"><img src="${esc(item.thumbnail_url)}" loading="lazy" alt="" width="88" height="88" class="h-[88px] w-[88px] rounded-[10px] object-cover"></button>
-      <div class="min-w-0 flex-1"><h3 class="break-words text-[13px] font-semibold">${esc(item.name || 'Sem título')}</h3><p class="mt-1 text-[12px] text-mute">${esc(date)} · ${item.width} × ${item.height}${Number.isFinite(item.duration_seconds) ? ` · ${formatDuration(item.duration_seconds)}` : ''}</p><p class="mt-1 break-words text-[12px] text-mute">${esc(item.workflow?.name || 'Edição anterior')}${item.seed != null ? ` · Semente ${item.seed}` : ''}</p></div></div>
-      <p class="mt-3 max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-[13px] leading-relaxed">${esc(item.prompt || 'Prompt não registrado nesta imagem.')}</p>
-      <div class="mt-3 flex flex-wrap items-center gap-2"><button data-history-open="${esc(item.id)}" class="btn-quiet !h-8 !px-3">Abrir imagem</button><button data-history-prompt="${esc(item.id)}" class="btn-quiet !h-8 !px-3" ${item.prompt ? '' : 'disabled'}>Reutilizar prompt</button><button data-history-delete="${esc(item.id)}" class="icon-btn ml-auto" aria-label="Excluir ${esc(item.name || 'edição')} do histórico" data-tip="Excluir do histórico">${icon('trash')}</button></div></article>`;
+    const date = new Date(item.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    const meta = [date, `${item.width} × ${item.height}`, Number.isFinite(item.duration_seconds) ? formatDuration(item.duration_seconds) : null, item.seed != null ? `semente ${item.seed}` : null].filter(Boolean).join(' · ');
+    return `<article class="group rounded-[14px] p-2.5 hover:bg-line/[.05]">
+      <div class="flex items-start gap-3">
+        <button data-history-open="${esc(item.id)}" class="shrink-0 rounded-[10px] transition-transform duration-150 active:scale-95" aria-label="Abrir ${esc(item.name || 'edição')}" data-tip="Abrir imagem" data-tip-pos="top"><img src="${esc(item.thumbnail_url)}" loading="lazy" alt="" width="72" height="72" class="h-[72px] w-[72px] rounded-[10px] object-cover" style="box-shadow:0 0 0 .5px rgb(var(--line) / .2)"></button>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-start justify-between gap-2"><h3 class="min-w-0 truncate text-[13px] font-semibold">${esc(item.name || 'Sem título')}</h3>
+            <span class="-mr-1 -mt-1 flex shrink-0 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
+              <button data-history-prompt="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Reutilizar prompt" data-tip="Reutilizar prompt" ${item.prompt ? '' : 'disabled'}>${icon('corner-up-left', 'ic-sm')}</button>
+              <button data-history-delete="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Excluir ${esc(item.name || 'edição')} do histórico" data-tip="Excluir do histórico">${icon('trash', 'ic-sm')}</button></span></div>
+          <p class="mt-0.5 text-[11px] leading-snug tabular-nums text-faint">${esc(meta)}</p>
+          <p class="mt-1.5 line-clamp-3 select-text break-words text-[12px] leading-relaxed text-mute" title="${esc(item.prompt || '')}">${esc(item.prompt || 'Prompt não registrado nesta imagem.')}</p>
+        </div></div></article>`;
   }).join('');
 }
 async function loadHistory(reset) {
   if (historyLoading) return;
   historyLoading = true; $('#historyMore').disabled = true; $('#historyMore').textContent = 'Carregar mais';
   if (reset) { historyItems = []; historyOffset = 0; renderHistory(); $('#historyMore').hidden = true; }
-  $('#historyMessage').hidden = false; $('#historyMessage').textContent = 'Carregando histórico…';
+  $('#historyMessage').hidden = historyItems.length > 0; if (!historyItems.length) $('#historyMessage').textContent = 'Carregando…';
   try {
     const data = await api(`/api/history?offset=${historyOffset}`);
     historyItems.push(...data.items); historyOffset = data.next_offset;
     renderHistory(); $('#historyMore').hidden = !data.has_more;
     $('#historyMessage').hidden = historyItems.length > 0;
-    $('#historyMessage').textContent = historyItems.length ? '' : 'Suas próximas edições aparecerão aqui com o prompt usado em cada imagem.';
-  } catch (e) { $('#historyMessage').textContent = e.message; $('#historyMore').hidden = false; $('#historyMore').textContent = 'Tentar novamente'; }
+    $('#historyMessage').textContent = historyItems.length ? '' : 'Nada por aqui ainda. Suas edições aparecem aqui com o prompt usado em cada imagem.';
+  } catch (e) { $('#historyMessage').hidden = false; $('#historyMessage').textContent = e.message; $('#historyMore').hidden = false; $('#historyMore').textContent = 'Tentar novamente'; }
   finally { historyLoading = false; $('#historyMore').disabled = false; }
 }
 $('#historyList').addEventListener('click', async e => {
@@ -1206,8 +1317,9 @@ async function copyImage() {
 const canSplit = () => S.versions.length > 1 && S.sel > 0;
 const splitOn = () => S.split && canSplit();
 const sbsOn = () => S.sbs && canSplit();
-function toggleSplit() { if (!canSplit()) return; S.split = !S.split; S.sbs = false; renderStage(); renderChrome(); }
-function toggleSbs() { if (!canSplit()) return; S.sbs = !S.sbs; S.split = false; renderStage(); renderChrome(); }
+function setView(m) { if (!canSplit()) return; S.split = m === 'split'; S.sbs = m === 'sbs'; renderStage(); renderChrome(); }
+function toggleSplit() { setView(S.split ? 'single' : 'split'); }
+function toggleSbs() { setView(S.sbs ? 'single' : 'sbs'); }
 
 /* Lado a lado: um único estado de visualização (zoom + deslocamento) aplicado aos dois painéis */
 const paneEls = $$('#sbs .pane'), V = { s: 1, x: 0, y: 0 };
@@ -1238,7 +1350,7 @@ paneEls.forEach(p => {
   p.addEventListener('dblclick', e => { const r = p.getBoundingClientRect(); if (V.s > 1.01) resetView(); else zoomAt(3, e.clientX - r.left, e.clientY - r.top); });
 });
 $('#zIn').onclick = () => zoomStep(1.5); $('#zOut').onclick = () => zoomStep(1 / 1.5);
-$('#zPct').onclick = () => zoomTo(1); $('#zFit').onclick = resetView; $('#sbsBtn').onclick = toggleSbs;
+$('#zPct').onclick = () => zoomTo(1); $('#zFit').onclick = resetView; $('#sbsBtn').onclick = () => setView('sbs');
 function paintSplit() {
   const f = $('#frame'), p = S.splitPos, h = $('#splitHandle');
   h.style.transform = `translateX(${(f.clientWidth * p / 100).toFixed(1)}px)`;
@@ -1260,7 +1372,7 @@ $('#splitHandle').addEventListener('keydown', e => {
   else return;
   e.preventDefault();
 });
-$('#compareBtn').onclick = toggleSplit;
+$('#compareBtn').onclick = () => setView('split'); $('#singleBtn').onclick = () => setView('single');
 
 /* ───────────────────────── tema ───────────────────────── */
 function setTheme(t) {
@@ -1286,14 +1398,16 @@ const commands = () => {
     { g: 'Edição', label: 'Lado a lado (zoom sincronizado)', icon: 'columns', keys: 'L', run: toggleSbs, on: canSplit() },
     { g: 'Edição', label: 'Desfazer', icon: 'undo', keys: 'mod+Z', run: undo, on: S.undo.length > 0 },
     { g: 'Edição', label: 'Refazer', icon: 'redo', keys: 'mod+shift+Z', run: redo, on: S.redo.length > 0 },
-    { g: 'Edição', label: 'Ajustes de geração', icon: 'sliders', run: () => setTimeout(openPopover, 30), keep: true },
-    ...(has ? LOOKS.map(l => ({ g: 'Looks', label: `Aplicar look: ${l.label}`, icon: 'sparkles', run: () => setPrompt(l.prompt), keep: true })) : []),
+    { g: 'Edição', label: 'Ajustes de geração', icon: 'sliders', run: () => setTimeout(() => openPop('pop'), 30), keep: true, on: has },
+    { g: 'Edição', label: 'Adicionar imagem de referência…', icon: 'image-plus', run: () => $('#referenceBtn').click(), on: has && !$('#referenceBtn').disabled },
+    { g: 'Edição', label: 'Presets de edição', icon: 'palette', run: () => setTimeout(() => openPop('popLooks'), 30), keep: true, on: has },
+    ...(has ? LOOKS.map(l => ({ g: 'Presets', label: `Aplicar preset: ${l.label}`, icon: 'palette', run: () => setPrompt(l.prompt), keep: true })) : []),
     { g: 'Configurações', label: 'Configurações avançadas…', icon: 'settings', keys: 'mod+,', run: () => openAdv(), keep: true },
     ...(R.remote ? R.workflows.filter(w => !w.active).map(w => ({ g: 'Configurações', label: `Usar workflow: ${w.name}`, icon: 'sparkles', run: () => selectWorkflow(w.id) })) : []),
     { g: 'Aparência', label: 'Tema automático', icon: 'monitor', run: () => setTheme('auto') },
     { g: 'Aparência', label: 'Tema claro', icon: 'sun', run: () => setTheme('light') },
     { g: 'Aparência', label: 'Tema escuro', icon: 'moon', run: () => setTheme('dark') },
-    { g: 'Teste', label: 'Simular falha na próxima geração', icon: 'flask', run: () => { S.failNext = true; toast({ text: 'A próxima geração vai falhar (teste de erro)', duration: 2500 }); }, on: has },
+    { g: 'Teste', label: 'Simular falha na próxima geração', icon: 'flask', run: () => { S.failNext = true; toast({ text: 'A próxima geração vai falhar (teste de erro)', duration: 2500 }); }, on: has && !R.remote },
   ].filter(c => c.on !== false);
 };
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -1347,14 +1461,14 @@ addEventListener('keydown', e => {
   if (mod && (k === 'z' || k === 'y') && (!typing || (e.target === promptEl && !promptEl.value))) { e.preventDefault(); (e.shiftKey || k === 'y') ? redo() : undo(); return; }
   if (mod && k === 'enter') { e.preventDefault(); if (!S.busy) generate(); return; }
   if (e.key === 'Escape' && !$('#historyPanel').hidden) { closeHistory(); return; }
-  if (e.key === 'Escape') { if (S.busy) { e.preventDefault(); cancelBusy(); } else if (popOpen()) closePopover(true); return; }
+  if (e.key === 'Escape') { if (S.busy) { e.preventDefault(); cancelBusy(); } else if (popOpen()) closePops(true); else if (splitOn() || sbsOn()) setView('single'); return; }
   if (typing || mod || e.altKey) return;
   if (k === 'c' && !e.repeat) toggleSplit();
   else if (k === 'l' && !e.repeat) toggleSbs();
   else if (sbsOn() && (e.key === '+' || e.key === '=')) { e.preventDefault(); zoomStep(1.5); }
   else if (sbsOn() && (e.key === '-' || e.key === '_')) { e.preventDefault(); zoomStep(1 / 1.5); }
   else if (sbsOn() && e.key === '0') { e.preventDefault(); resetView(); }
-  else if (k === '/') { e.preventDefault(); promptEl.focus(); }
+  else if (k === '/' && hasImg()) { e.preventDefault(); promptEl.focus(); }
   else if (e.key === 'ArrowUp' || e.key === '[') { e.preventDefault(); select(S.sel - 1, document.activeElement.closest('#railList')); }
   else if (e.key === 'ArrowDown' || e.key === ']') { e.preventDefault(); select(S.sel + 1, document.activeElement.closest('#railList')); }
 });
@@ -1394,36 +1508,42 @@ async function refreshChecks(ids = R.workflows.map(w => w.id)) {
   }));
 }
 
+const DOT = { on: 'bg-ok', starting: 'bg-accent breathe', idle: 'bg-faint', off: 'bg-danger', app: 'bg-danger', demo: 'bg-faint' };
+function engineState() {
+  if (!R.remote) return 'demo';
+  const c = R.status?.comfy;
+  return !R.status ? 'app' : c.online ? 'on' : ['running', 'preparing'].includes(c.launcher) ? 'starting' : c.managed ? 'idle' : 'off';
+}
 function renderEngine() {
-  const pill = $('#enginePill'), dot = $('#engDot'), label = $('#engLabel');
-  if (!R.remote) {
-    label.textContent = 'Demo'; dot.className = 'h-1.5 w-1.5 shrink-0 rounded-full bg-faint';
-    pill.dataset.tip = 'Modo demonstração: sem servidor, as edições são simuladas. Rode “python -m smart_photo_edit” para usar o motor local.';
-    return;
-  }
-  const c = R.status?.comfy, wf = activeWf();
-  const st = !R.status ? 'app' : c.online ? 'on' : ['running', 'preparing'].includes(c.launcher) ? 'starting' : 'off';
-  dot.className = 'h-1.5 w-1.5 shrink-0 rounded-full ' + { on: 'bg-ok', starting: 'bg-accent breathe', off: 'bg-danger', app: 'bg-danger' }[st];
-  label.textContent = wf ? shortName(wf.name) : 'ComfyUI';
-  pill.dataset.tip = { on: `ComfyUI conectado${c?.device?.name ? ' · ' + c.device.name : ''}`, starting: c?.phase || 'Iniciando motor local…', off: c?.managed ? 'O motor local será preparado ao gerar. Clique para ver o status.' : 'Motor externo desconectado.', app: 'O app local não responde.' }[st];
+  const st = engineState(), c = R.status?.comfy;
+  const dot = $('#engDot'); dot.className = 'absolute right-1.5 top-1.5 h-2 w-2 rounded-full ring-2 ring-bg ' + DOT[st];
+  const text = {
+    demo: 'Modo demonstração: sem servidor, as edições são simuladas. Rode “python -m smart_photo_edit” para usar o motor local.',
+    on: `Motor pronto${c?.device?.name ? ' · ' + c.device.name : ''}`,
+    starting: c?.phase || 'Iniciando motor local…',
+    idle: 'O motor local será preparado na primeira edição.',
+    off: 'Motor externo desconectado.',
+    app: 'O app local não responde.',
+  }[st];
+  $('#advBtn').dataset.tip = 'Configurações · ' + text; $('#advBtn').dataset.keys = '';
 }
 function applySupports() {
-  [['#strength', 'strength', 'intensidade'], ['#neg', 'negative', 'prompt negativo']].forEach(([sel, key, what]) => {
-    const el = $(sel), row = el.closest('.space-y-4 > div'), ok = supports(key);
-    el.disabled = !ok; row.style.opacity = ok ? '' : '.5';
-    row.querySelector('.unsup')?.remove();
-    if (!ok) row.insertAdjacentHTML('beforeend', `<p class="unsup mt-1 text-[11px] text-faint">Este workflow não usa ${what}.</p>`);
+  /* Controles que o workflow ativo ignora saem da tela em vez de aparecer desabilitados. */
+  [['#strength', 'strength'], ['#neg', 'negative']].forEach(([sel, key]) => {
+    const el = $(sel), ok = supports(key);
+    el.disabled = !ok; el.closest('.space-y-4 > div').classList.toggle('hidden', !ok);
   });
   $('#popWf').textContent = R.remote ? (activeWf()?.name ?? 'ComfyUI') : 'Modo demonstração';
+  syncPrompt();
 }
 
-const chipCls = 'inline-flex h-[20px] items-center gap-1 rounded-full px-2 text-[11px] font-medium';
+const chipCls = 'chip';
 function wfChip(w) {
   if (!R.remote) return '';
   const ck = R.checks[w.id];
   if (!ck) return `<span class="${chipCls} bg-line/[.07] text-mute">Verificando…</span>`;
-  if (!ck.online) return `<span class="${chipCls} bg-line/[.07] text-mute">Motor aguardando preparo</span>`;
-  if (ck.ok) return `<span class="${chipCls} bg-ok/15 text-ok">${icon('check')}Pronto</span>`;
+  if (!ck.online) return '';
+  if (ck.ok) return `<span class="${chipCls} bg-ok/15 text-ok">${icon('check', 'ic-sm')}Pronto</span>`;
   return `<span class="${chipCls} bg-accent/15 text-accent">${ck.issues.length} pendência${ck.issues.length > 1 ? 's' : ''}</span>`;
 }
 function renderWfList() {
@@ -1433,15 +1553,15 @@ function renderWfList() {
     return `<div class="relative">
       <button role="radio" aria-checked="${w.active}" tabindex="${w.active ? 0 : -1}" data-wf="${esc(w.id)}"
         class="flex w-full items-start gap-3 rounded-[14px] p-3.5 ${w.source === 'user' ? 'pr-12' : ''} text-left transition-transform duration-150 active:scale-[.995] ${w.active ? 'bg-line/[.08] shadow-[0_0_0_1.5px_rgb(var(--accent)/.7)]' : 'bg-line/[.04] hover:bg-line/[.07]'}">
-        <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full ${w.active ? 'bg-accent text-white' : 'shadow-[inset_0_0_0_1.5px_rgb(var(--line)/.3)]'}">${w.active ? icon('check') : ''}</span>
+        <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full ${w.active ? 'bg-accent text-white' : 'shadow-[inset_0_0_0_1.5px_rgb(var(--line)/.3)]'}">${w.active ? icon('check', 'ic-sm !h-3 !w-3') : ''}</span>
         <span class="min-w-0 flex-1">
-          <span class="flex flex-wrap items-center gap-2"><span class="text-[13px] font-semibold">${esc(w.name)}</span>
-            <span class="${chipCls} bg-line/[.07] text-mute">${w.source === 'user' ? 'Importado' : 'Embutido'}</span>${wfChip(w)}</span>
+          <span class="flex flex-wrap items-center gap-x-2 gap-y-1"><span class="text-[13px] font-semibold">${esc(w.name)}</span>
+            ${w.source === 'user' ? `<span class="${chipCls} bg-line/[.07] text-mute">Importado</span>` : ''}${wfChip(w)}</span>
           ${w.description ? `<span class="mt-1 block text-[12px] leading-snug text-mute">${esc(w.description)}</span>` : ''}
-          ${issues.length ? `<ul class="mt-2.5 space-y-1.5 border-t border-line/[.08] pt-2.5 text-[12px] leading-snug text-mute">${issues.map(i => `<li class="flex gap-2"><span class="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent"></span><span class="select-text break-words">${esc(i.message)}</span></li>`).join('')}</ul>
+          ${issues.length ? `<ul class="mt-2.5 space-y-1.5 border-t border-line/[.08] pt-2.5 text-[12px] leading-snug text-mute">${issues.map(i => `<li class="flex gap-2"><span class="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent"></span><span class="select-text break-words">${esc(i.message)}</span></li>`).join('')}</ul>
             <span class="mt-2 block text-[11px] text-faint">Instalar o que falta: <code class="select-text rounded bg-line/[.08] px-1 py-0.5 font-mono">python -m smart_photo_edit setup</code></span>` : ''}
         </span></button>
-      ${w.source === 'user' ? `<button class="icon-btn absolute right-2.5 top-2.5" data-wf-del="${esc(w.id)}" aria-label="Remover ${esc(w.name)}" data-tip="Remover">${icon('trash')}</button>` : ''}
+      ${w.source === 'user' ? `<button class="icon-btn icon-btn-sm absolute right-3 top-3" data-wf-del="${esc(w.id)}" aria-label="Remover ${esc(w.name)}" data-tip="Remover">${icon('trash', 'ic-sm')}</button>` : ''}
     </div>`;
   }).join('') + Object.entries(R.errors).map(([f, m]) => `<div class="rounded-[14px] bg-danger/10 p-3.5 text-[12px] text-danger"><b class="font-semibold">${esc(f)}</b>: ${esc(m)}</div>`).join('');
   $('#wfDir').textContent = R.userDir;
@@ -1449,6 +1569,17 @@ function renderWfList() {
 }
 const modelBytes = n => (n / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' GB';
 let savingModels = false, modelRenderKey;
+const segmented = (name, label, value, options, locked, help = '') => {
+  const i = Math.max(0, options.findIndex(o => o.id === value));
+  return `<div data-model-seg="${name}"><span class="label mb-1.5 block" id="lbl-${name}">${label}</span>
+    <div class="seg" style="grid-template-columns:repeat(${options.length},1fr)" role="radiogroup" aria-labelledby="lbl-${name}">
+      <span class="seg-thumb" style="width:calc((100% - 4px)/${options.length});transform:translateX(${i * 100}%)"></span>
+      ${options.map((o, k) => `<button role="radio" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}" data-seg-key="${name}" data-seg-value="${esc(o.id)}" class="seg-btn" ${locked ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}
+    </div>${help ? `<p class="mt-1.5 text-[12px] leading-relaxed text-mute">${help}</p>` : ''}</div>`;
+};
+function currentPreset(spec) {
+  return Object.entries(spec.presets).find(([, p]) => Object.keys(p).every(k => p[k] === spec.values[k]))?.[0] ?? null;
+}
 function renderModelOptions() {
   const spec = activeWf()?.model_options, section = $('#secModels'), box = $('#modelOptions');
   section.classList.toggle('hidden', !spec);
@@ -1456,23 +1587,24 @@ function renderModelOptions() {
   const v = spec.values, locked = savingModels || !!S.busy || R.status?.comfy?.launcher === 'preparing';
   const renderKey = JSON.stringify([activeWf().id, spec, locked]);
   if (modelRenderKey === renderKey) return;
+  const hadFocus = document.activeElement?.closest?.('#modelOptions') ? document.activeElement.dataset.segKey || document.activeElement.dataset.modelKey || document.activeElement.dataset.modelPreset : null;
   modelRenderKey = renderKey;
   const select = (key, label, options, help = '') => `<div><label class="label mb-1.5 block" for="model-${key}">${label}</label>
     <select id="model-${key}" data-model-key="${key}" class="field" ${locked ? 'disabled' : ''}>${options.map(o => `<option value="${esc(o.id)}" ${o.id === v[key] ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>
     ${help ? `<p class="mt-1.5 text-[12px] leading-relaxed text-mute">${help}</p>` : ''}</div>`;
   const image = spec.images.find(x => x.id === v.image), encoder = spec.encoders.find(x => x.id === v.text_encoder);
-  box.innerHTML = `<div class="flex flex-wrap gap-2">
-    <button class="btn-quiet" data-model-preset="original" ${locked ? 'disabled' : ''}>Original</button>
-    <button class="btn-quiet" data-model-preset="compact" ${locked ? 'disabled' : ''}>Compacto · CPU + GPU</button>
-    <button class="btn-quiet" data-model-preset="minimum" ${locked ? 'disabled' : ''}>Menor · Q3 experimental</button>
-  </div>`
+  const preset = currentPreset(spec);
+  box.innerHTML = segmented('preset', 'Perfil', preset ?? '', [{ id: 'original', label: 'Original' }, { id: 'compact', label: 'Compacto' }, { id: 'minimum', label: 'Menor · Q3' }], locked,
+      preset === 'compact' ? 'Codificador W4A8 na CPU, pouca VRAM, resolução 768. Ainda não validado em 6 GB.' : preset === 'minimum' ? 'Codificador GGUF Q3 experimental na CPU e pouca VRAM. Ainda não validado em 6 GB e pode perder qualidade.' : preset === 'original' ? 'Modelos INT8, execução automática. É o padrão e não é uma recomendação para 6 GB.' : 'Combinação personalizada.')
   + select('image', 'Modelo de imagem', spec.images, image?.merged ? 'Viggle Turbo já incorporado: o app não aplica uma segunda LoRA. Q4 pode alterar detalhes e composição.' : 'O workflow Turbo aplica sua LoRA ao modelo base; o workflow Base mantém seus próprios passos.')
   + select('text_encoder', 'Codificador da foto e do texto', spec.encoders, encoder?.vision_bytes ? `Inclui um projetor visual de ${modelBytes(encoder.vision_bytes)} para ler a foto. Total do codificador: ${modelBytes(encoder.size_bytes + encoder.vision_bytes)}. GGUF experimental: pode reduzir a fidelidade e a precisão de texto nas imagens.` : 'Qwen3-VL 8B próprio do Qwen-Image 2.1, com leitura da imagem preservada.')
-  + select('text_device', 'Onde executar o codificador', [{id:'default',label:'Automático · GPU quando disponível'},{id:'cpu',label:'CPU / RAM · libera VRAM'}], 'Para uma GPU de 6 GB, use CPU / RAM. O codificador de 6,31 GB deixa pouca ou nenhuma margem para a edição na GPU; a CPU precisa de RAM disponível e pode ser mais lenta.')
-  + select('memory', 'Memória da GPU', [{id:'auto',label:'Automático'},{id:'low',label:'Pouca VRAM · transferência para RAM'}], 'O modo de pouca VRAM reserva memória para a execução. Os perfis Compacto e Menor também escolhem resolução 768.')
-  + `<p class="text-[12px] leading-relaxed text-mute">VAE: ${esc(spec.vae.label)} · ${modelBytes(spec.vae.size_bytes)}. Mantido para compatibilidade com o modelo de imagem.</p>
-    <p class="text-[13px] font-medium" role="status" aria-live="polite">Modelos selecionados: ${modelBytes(spec.total_bytes)} em disco.</p>
-    <p class="text-[12px] leading-relaxed text-mute">${esc(spec.notice)} As alterações ficam salvas e são aplicadas na próxima edição. O app baixa os arquivos que faltarem.</p>`;
+  + segmented('text_device', 'Onde executar o codificador', v.text_device, [{ id: 'default', label: 'Automático' }, { id: 'cpu', label: 'CPU / RAM' }], locked, 'Para uma GPU de 6 GB, use CPU / RAM. O codificador de 6,31 GB deixa pouca ou nenhuma margem para a edição na GPU; a CPU precisa de RAM disponível e pode ser mais lenta.')
+  + segmented('memory', 'Memória da GPU', v.memory, [{ id: 'auto', label: 'Automática' }, { id: 'low', label: 'Pouca VRAM' }], locked, 'O modo de pouca VRAM transfere pesos para a RAM e reserva memória para a execução.')
+  + `<div class="rounded-[14px] bg-line/[.05] p-3.5 text-[12px] leading-relaxed text-mute">
+      <p class="text-[13px] font-medium text-ink" role="status" aria-live="polite">${modelBytes(spec.total_bytes)} em disco</p>
+      <p class="mt-1">VAE: ${esc(spec.vae.label)} · ${modelBytes(spec.vae.size_bytes)}, fixo por compatibilidade com o modelo de imagem.</p>
+      <p class="mt-1">${esc(spec.notice)} As alterações ficam salvas e valem na próxima edição; o app baixa os arquivos que faltarem.</p></div>`;
+  if (hadFocus) box.querySelector(`[data-seg-key="${hadFocus}"][aria-checked="true"], [data-model-key="${hadFocus}"]`)?.focus();
 }
 async function setModels(patch, preset = false) {
   const wf = activeWf(); if (!wf?.model_options || savingModels) return;
@@ -1491,10 +1623,17 @@ $('#modelOptions').addEventListener('change', e => {
   if (key) setModels({ [key]: e.target.value });
 });
 $('#modelOptions').addEventListener('click', e => {
-  const button = e.target.closest('[data-model-preset]');
-  if (!button) return;
-  const preset = button.dataset.modelPreset;
-  setModels(activeWf().model_options.presets[preset], preset !== 'original');
+  const b = e.target.closest('[data-seg-key]');
+  if (!b || b.getAttribute('aria-checked') === 'true') return;
+  const { segKey: key, segValue: value } = b.dataset;
+  if (key === 'preset') setModels(activeWf().model_options.presets[value], value !== 'original');
+  else setModels({ [key]: value });
+});
+$('#modelOptions').addEventListener('keydown', e => {
+  const b = e.target.closest('[data-seg-key]'); if (!b || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+  e.preventDefault();
+  const all = $$(`#modelOptions [data-seg-key="${b.dataset.segKey}"]`), i = all.indexOf(b), next = all[Math.max(0, Math.min(all.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+  if (next !== b) next.click();
 });
 
 function renderWfParams() {
@@ -1507,9 +1646,9 @@ function renderWfParams() {
     const hint = p.hint ? `<p class="mt-1.5 text-[11px] leading-snug text-faint">${esc(p.hint)}</p>` : '';
     if (p.type === 'choice') {
       const i = Math.max(0, p.options.findIndex(o => String(o.value) === String(v))), n = p.options.length;
-      return `<div data-param="${esc(p.key)}">${head}<div class="relative grid rounded-[10px] bg-line/[.07] p-0.5" style="grid-template-columns:repeat(${n},1fr)" role="radiogroup" aria-labelledby="pl-${p.key}">
-        <span class="absolute inset-y-0.5 left-0.5 rounded-[8px] shadow-[0_1px_3px_rgb(0_0_0/.25),0_0_0_.5px_rgb(0_0_0/.1)] transition-transform duration-300 ease-out" style="width:calc((100% - 4px)/${n});background:rgb(var(--ink)/.14);transform:translateX(${i * 100}%)"></span>
-        ${p.options.map((o, k) => `<button role="radio" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}" data-k="${k}" class="relative z-10 h-7 rounded-[8px] px-2 text-[12px] font-medium transition-transform duration-150 active:scale-95 ${k === i ? '' : 'text-mute'}">${esc(o.label)}</button>`).join('')}
+      return `<div data-param="${esc(p.key)}">${head}<div class="seg" style="grid-template-columns:repeat(${n},1fr)" role="radiogroup" aria-labelledby="pl-${p.key}">
+        <span class="seg-thumb" style="width:calc((100% - 4px)/${n});transform:translateX(${i * 100}%)"></span>
+        ${p.options.map((o, k) => `<button role="radio" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}" data-k="${k}" class="seg-btn">${esc(o.label)}</button>`).join('')}
       </div>${hint}</div>`;
     }
     return `<div data-param="${esc(p.key)}">${head}<input type="range" class="slider" min="${p.min}" max="${p.max}" step="${p.step || 1}" value="${v}" style="--p:${(v - p.min) / (p.max - p.min) * 100}%" aria-labelledby="pl-${p.key}">${hint}</div>`;
@@ -1585,11 +1724,13 @@ $('#wfFile').addEventListener('change', async e => {
 
 /* Motor local: preparo e status. */
 function renderAdvStatus() {
-  const c = R.status?.comfy, el = $('#advUrlMsg'), button = $('#advStart');
-  if (!c) { el.textContent = 'O app local não responde.'; return; }
+  const c = R.status?.comfy, el = $('#advUrlMsg'), button = $('#advStart'), st = engineState();
+  $('#advDot').className = 'h-2 w-2 shrink-0 rounded-full ' + DOT[st];
+  const label = (ic, text) => { button.innerHTML = `${icon(ic, ic === 'loader' ? 'spin' : '')}<span>${text}</span>`; };
+  if (!c) { el.textContent = 'O app local não responde.'; button.disabled = true; label('play', 'Preparar motor local'); return; }
   const preparing = c.launcher === 'preparing' || c.launcher === 'running' && !c.online;
   button.disabled = preparing;
-  button.textContent = preparing ? 'Preparando motor…' : c.online ? 'Verificar motor local' : c.error ? 'Tentar preparar novamente' : 'Preparar motor local';
+  if (preparing) label('loader', 'Preparando…'); else if (c.online) label('retry', 'Verificar'); else if (c.error) label('retry', 'Tentar novamente'); else label('play', 'Preparar motor local');
   el.textContent = c.online ? `Motor pronto${c.device?.name ? ' · ' + c.device.name : ''}` : c.managed ? c.phase : 'Conexão externa configurada pela linha de comando.';
 }
 async function saveSettings(patch) {
@@ -1608,7 +1749,7 @@ async function openAdv() {
   if (advOpen()) return;
   closePopover(); if (palOpen()) closePalette(false);
   advReturn = document.activeElement; $('#app').inert = true; adv.dataset.open = 'true';
-  const body = adv.querySelector('.space-y-7');
+  const body = $('#advBody');
   let note = $('#advDemo');
   if (!R.remote) {
     if (!note) body.insertAdjacentHTML('afterbegin', `<div id="advDemo" class="rounded-[14px] bg-accent/10 p-3.5 text-[13px] leading-relaxed"><b class="font-semibold">Modo demonstração.</b> Você abriu a interface sem o servidor, então as edições são simuladas. Para usar o motor local, inicie o app com <code class="rounded bg-line/[.08] px-1 py-0.5 font-mono text-[12px]">python -m smart_photo_edit</code> e abra o endereço que ele mostrar.</div>`);
@@ -1625,7 +1766,7 @@ function closeAdv() { adv.dataset.open = 'false'; $('#app').inert = false; advRe
 adv.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAdv(); } });
 adv.addEventListener('pointerdown', e => { if (e.target.matches('[data-close-adv]')) { e.preventDefault(); closeAdv(); } });
 $('#advClose').onclick = closeAdv;
-$('#enginePill').onclick = openAdv;
+$('#advBtn').onclick = openAdv;
 $('#popAdv').onclick = openAdv;
 
 async function bootRemote() {
@@ -1637,8 +1778,7 @@ async function bootRemote() {
 
 /* ───────────────────────── botões / init ───────────────────────── */
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
-$('#copyBtn').onclick = copyImage; $('#exportBtn').onclick = exportImage;
-$('#paletteBtn').onclick = openPalette;
+$('#exportBtn').onclick = exportImage;
 $('#emptyOpen').onclick = pickFile; $('#emptySample').onclick = loadSample; $('#stack').onclick = loadSample;
 $('#railList').addEventListener('keydown', e => { if (e.key === 'Delete' || e.key === 'Backspace') { const i = +document.activeElement.dataset.i; if (i > 0) { e.preventDefault(); removeVersion(i); } } });
 $$('[data-kbd]').forEach(el => { el.innerHTML = kbds(el.dataset.kbd); });
