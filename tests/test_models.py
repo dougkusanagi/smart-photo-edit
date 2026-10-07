@@ -53,6 +53,19 @@ def test_incompatible_and_unknown_models_are_rejected():
             models.choices('qwen21-base', values)
 
 
+@pytest.mark.parametrize('part, key, selection, message', [
+    ('encoders', 'w4a8', {'text_encoder': 'w4a8'}, 'multimodal'),
+    (None, 'vae', {}, 'VAE'),
+    (None, 'vision', {'text_encoder': 'q3_k_m'}, 'projetor'),
+    (None, 'lora', {}, 'LoRA Turbo'),
+])
+def test_mismatched_component_families_are_rejected(monkeypatch, part, key, selection, message):
+    component = models.CATALOG[part][key] if part else models.CATALOG[key]
+    monkeypatch.setitem(component, 'family', 'incompatible-family')
+    with pytest.raises(WorkflowError, match=message):
+        models.configure(builtin(), selection)
+
+
 def test_imported_workflow_is_not_rewritten():
     wf = builtin()
     wf.source = 'user'
@@ -186,3 +199,99 @@ def test_bundled_multimodal_loader_preserves_vision_and_cpu_device(monkeypatch, 
     state.clear()
     with pytest.raises(ValueError, match='projetor visual'):
         loader.load('encoder.gguf', device)
+
+
+@pytest.mark.parametrize('wf_id', ['qwen21-viggle-turbo', 'qwen21-base'])
+def test_addon_lora_is_stacked_before_sampling_without_changing_engine_signature(wf_id):
+    base = models.configure(builtin(wf_id))
+    wf = models.configure(builtin(wf_id), None, ['light-blend'])
+    addon = models.CATALOG['addons']['light-blend']
+    node = wf.graph['_spe_addon_light-blend']
+    assert node['class_type'] == 'SPEAddonLora' and node['inputs']['lora_name'] == addon['lora']['filename']
+    graph = wf.apply(image_name='photo.png', prompt=addon['prompt'], seed=1)
+    consumers = [n for n in graph.values() if n['inputs'].get('model') == ['_spe_addon_light-blend', 0]]
+    assert len(consumers) == 1 and node['inputs']['model'] == base.graph[next(k for k, n in graph.items() if n is consumers[0])]['inputs']['model']
+    assert models.signature(wf) == models.signature(base)
+    assert [m['filename'] for m in wf.requires['models'] if m.get('addon')] == [addon['lora']['filename']]
+    assert not any(m.get('addon') for m in base.requires['models'])
+    assert {'name': 'spe_addon_lora.py'} in wf.requires['bundled_nodes']
+
+
+def test_addon_rejects_unknown_ids_and_unsupported_workflows():
+    with pytest.raises(WorkflowError):
+        models.configure(builtin(), None, ['nao-existe'])
+    custom = builtin()
+    custom.source = 'user'
+    with pytest.raises(WorkflowError):
+        models.configure(custom, None, ['light-blend'])
+    assert models.public(builtin())['addons'][0]['id'] == 'light-blend'
+
+
+def test_addon_prompt_keeps_trigger_word_first():
+    assert models.CATALOG['addons']['light-blend']['prompt'].startswith('pengyu ')
+
+
+def test_profiles_report_what_is_missing_on_disk(tmp_path):
+    wf = builtin()
+    for m in models.configure(wf).requires['models']:
+        (tmp_path / m['folder']).mkdir(parents=True, exist_ok=True)
+        (tmp_path / m['folder'] / m['filename']).touch()
+    image = models.CATALOG['images']['turbo_q4_k_m']
+    (tmp_path / image['folder']).mkdir(parents=True, exist_ok=True)
+    (tmp_path / image['folder'] / (image['filename'] + '.part')).write_bytes(b'x' * 1000)
+    spec = models.public(wf, None, tmp_path)
+    by_id = {p['id']: p for p in spec['profiles']}
+    assert by_id['original']['missing_bytes'] == 0 and spec['missing_bytes'] == 0
+    compact = models.configure(wf, by_id['compact']['values']).requires['models']
+    assert by_id['compact']['total_bytes'] == sum(m['size_bytes'] for m in compact)
+    # O VAE já existe e o .part conta o que chegou.
+    expected = sum(m['size_bytes'] for m in compact if m['role'] != 'vae') - 1000
+    assert by_id['compact']['missing_bytes'] == expected
+    assert [m['label'] for m in by_id['compact']['models']][0] == 'Qwen-Image 2.1 Viggle Turbo GGUF Q4_K_M'
+    assert models.public(wf)['profiles'][0]['missing_bytes'] is None
+
+
+def test_download_progress_is_summed_across_models(monkeypatch):
+    runtime = ManagedRuntime()
+    wf = models.configure(builtin(), models.presets('qwen21-viggle-turbo')['minimum'])
+    first, second = wf.requires['models'][:2]
+    progress = runtime._models_progress(wf)
+    total = sum(m['size_bytes'] for m in wf.requires['models'])
+    assert runtime.download == {'done': 0, 'total': total}
+    runtime._next_model(first); progress(first['size_bytes'], first['size_bytes'])
+    runtime._next_model(second); progress(10, second['size_bytes'])
+    assert runtime.download == {'done': first['size_bytes'] + 10, 'total': total}
+    assert runtime.phase.startswith('Baixando modelos · ')
+    runtime.stopping.set()
+    with pytest.raises(RuntimeError):
+        progress(11, second['size_bytes'])
+
+
+async def test_cancel_stops_preparation_and_allows_retry(monkeypatch):
+    runtime = ManagedRuntime()
+    started = asyncio.Event()
+    async def prepare(wf):
+        started.set()
+        while not runtime.stopping.is_set():
+            await asyncio.sleep(.01)
+        raise RuntimeError('Preparo interrompido.')
+    monkeypatch.setattr(runtime, '_prepare', prepare)
+    runtime.start(builtin())
+    await started.wait()
+    assert runtime.state == 'preparing'
+    await runtime.cancel()
+    assert runtime.state != 'preparing' and not runtime.stopping.is_set()
+    assert 'cancelado' in runtime.phase and runtime.error == ''
+    started.clear(); runtime.start(builtin()); await started.wait()
+    await runtime.cancel()
+
+
+async def test_listing_shows_profiles_and_cancel_route(make_env):
+    env = await make_env()
+    listing = await (await env.http.get('/api/workflows')).json()
+    spec = next(w for w in listing['workflows'] if w['active'])['model_options']
+    assert [p['id'] for p in spec['profiles']] == ['original', 'compact', 'minimum']
+    # Num ComfyUI externo o app não conhece a pasta de modelos.
+    assert env.state.settings.engine_mode == 'external' and all(p['missing_bytes'] is None for p in spec['profiles'])
+    assert 'download' in (await (await env.http.get('/api/status')).json())['comfy']
+    assert (await env.http.post('/api/comfy/cancel')).status == 200

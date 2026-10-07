@@ -12,7 +12,9 @@
         "qwen21-base",
         "qwen21-viggle-turbo"
       ],
-      "merged": false
+      "merged": false,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "turbo_q4_k_m": {
       "folder": "unet",
@@ -25,7 +27,9 @@
       "workflows": [
         "qwen21-viggle-turbo"
       ],
-      "merged": true
+      "merged": true,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "turbo_q5_k_m": {
       "folder": "unet",
@@ -38,7 +42,9 @@
       "workflows": [
         "qwen21-viggle-turbo"
       ],
-      "merged": true
+      "merged": true,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "turbo_q6_k": {
       "folder": "unet",
@@ -51,7 +57,9 @@
       "workflows": [
         "qwen21-viggle-turbo"
       ],
-      "merged": true
+      "merged": true,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "turbo_q8_0": {
       "folder": "unet",
@@ -64,7 +72,9 @@
       "workflows": [
         "qwen21-viggle-turbo"
       ],
-      "merged": true
+      "merged": true,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "base_q4_k": {
       "folder": "unet",
@@ -77,7 +87,9 @@
       "workflows": [
         "qwen21-base"
       ],
-      "merged": false
+      "merged": false,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "base_q5_0": {
       "folder": "unet",
@@ -90,7 +102,9 @@
       "workflows": [
         "qwen21-base"
       ],
-      "merged": false
+      "merged": false,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "base_q6_k": {
       "folder": "unet",
@@ -103,7 +117,9 @@
       "workflows": [
         "qwen21-base"
       ],
-      "merged": false
+      "merged": false,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     },
     "base_q8_0": {
       "folder": "unet",
@@ -116,7 +132,9 @@
       "workflows": [
         "qwen21-base"
       ],
-      "merged": false
+      "merged": false,
+      "family": "qwen-image-2.1",
+      "encoder_family": "qwen3-vl-8b"
     }
   },
   "encoders": {
@@ -126,7 +144,8 @@
       "size_bytes": 9350798360,
       "sha256": "8bfd0f6e12abf2d2d697ecc888e5e90b0d6741d6708f05799f53afa560452e8f",
       "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/text_encoders/qwen3vl_8b_int8_convrot.safetensors",
-      "label": "Qwen3-VL 8B INT8 · 9,35 GB"
+      "label": "Qwen3-VL 8B INT8 · 9,35 GB",
+      "family": "qwen3-vl-8b"
     },
     "w4a8": {
       "folder": "text_encoders",
@@ -134,7 +153,8 @@
       "size_bytes": 6312105364,
       "sha256": "7754425e55e7bea2bfde4dde59a4cc236cb44e5ee9c215ea66ef8d47012824eb",
       "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/text_encoders/qwen3vl_8b_w4a8.safetensors",
-      "label": "Qwen3-VL 8B W4A8 · 6,31 GB"
+      "label": "Qwen3-VL 8B W4A8 · 6,31 GB",
+      "family": "qwen3-vl-8b"
     },
     "q3_k_m": {
       "folder": "text_encoders/spe-qwen3vl-8b",
@@ -144,7 +164,8 @@
       "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/Qwen3-VL-8B-Instruct-Q3_K_M.gguf",
       "label": "Qwen3-VL 8B GGUF Q3_K_M · 4,12 GB + visão",
       "format": "gguf",
-      "experimental": true
+      "experimental": true,
+      "family": "qwen3-vl-8b"
     },
     "q4_k_m": {
       "folder": "text_encoders/spe-qwen3vl-8b",
@@ -154,7 +175,8 @@
       "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
       "label": "Qwen3-VL 8B GGUF Q4_K_M · 5,03 GB + visão",
       "format": "gguf",
-      "experimental": true
+      "experimental": true,
+      "family": "qwen3-vl-8b"
     }
   },
   "vae": {
@@ -162,20 +184,40 @@
     "filename": "qwen_image_2.1_vae_bf16.safetensors",
     "size_bytes": 675509688,
     "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9",
-    "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/vae/qwen_image_2.1_vae_bf16.safetensors"
+    "url": "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/cb504a4090723e43f17ad01cec0359490e2de613/vae/qwen_image_2.1_vae_bf16.safetensors",
+    "family": "qwen-image-2.1"
   },
   "lora": {
     "folder": "loras",
     "filename": "Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
     "size_bytes": 679604800,
     "sha256": "0c98591700346f9777051d4e6fa29aa94519abec0d85b1f1f672a2a3db8c94b3",
-    "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors"
+    "url": "https://huggingface.co/Viggle/Qwen-Image-2.1-viggle-turbo/resolve/009a44a895ef85f7e643c80fdca9543795248867/Qwen-Image-2.1-viggle-turbo-v0.3-6step-lora-r128.safetensors",
+    "family": "qwen-image-2.1"
   },
   "vision": {
     "folder": "text_encoders/spe-qwen3vl-8b",
     "filename": "mmproj-Qwen3-VL-8B-Instruct-F16.gguf",
     "size_bytes": 1159030336,
     "sha256": "d406d03ebabefdef86a2c86bf0c1b65f9e046f7a81c218f25de4931b46a07fc4",
-    "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/mmproj-F16.gguf"
+    "url": "https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF/resolve/b93a7ee713758252c555be4210c00540df954dc2/mmproj-F16.gguf",
+    "family": "qwen3-vl-8b"
+  },
+  "addons": {
+    "light-blend": {
+      "label": "Integrar luz e sombra",
+      "description": "Uniformiza a iluminação do objeto ou produto, realça brilhos, define frente e fundo, cria sombra de contato natural e o funde ao cenário. Treinada para objetos e produtos; com pessoas é experimental.",
+      "prompt": "pengyu Apply consistent lighting to the product or object, enhance specular highlights, front-back spatial relationship, add natural contact shadow, and blend it seamlessly into the background.",
+      "strength": 1.0,
+      "source": "https://huggingface.co/RunningHubAI/rh-qwen-image-2.1-lora-2104918997757157378",
+      "license": "Publicada pela RunningHub em nome do autor; os direitos permanecem com o criador. Siga a licença do projeto original.",
+      "lora": {
+        "folder": "loras",
+        "filename": "Qwenimag21_c2-st2000.safetensors",
+        "size_bytes": 167830408,
+        "sha256": "b32903f74a8afb9e7f80ceba513734f63865eb24588eedae87e3dd31478e4749",
+        "url": "https://huggingface.co/RunningHubAI/rh-qwen-image-2.1-lora-2104918997757157378/resolve/682fb47975c4fe57f97b54cfb42398f3efe397cb/Qwenimag21_c2-st2000.safetensors"
+      }
+    }
   }
 }

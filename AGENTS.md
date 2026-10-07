@@ -10,10 +10,12 @@ O equipamento informado para testar no Windows é uma **GTX 1660 Ti de 6 GB (Tur
 
 ## Funcionalidades atuais
 
-- Workflows Qwen-Image 2.1 Base e Viggle Turbo de seis passos, com catálogo de modelos compatíveis e escolhas persistidas por workflow.
+- Workflows Qwen-Image 2.1 Base e Viggle Turbo de seis passos, com catálogo de modelos compatíveis. A interface só oferece perfis prontos (Original, Compacto, Mínimo), persistidos por workflow, com estado de download por perfil, botão Baixar, progresso somado e cancelamento retomável; combinações avulsas ficam só na API.
 - Perfis quantizados, codificador multimodal na CPU/RAM e modo de pouca VRAM. O perfil Original continua sendo o padrão; os perfis menores e encoders GGUF não têm garantia de inferência em 6 GB.
 - Prompt visível por edição, PNG exportado com metadados e histórico local persistente, com reabertura e reutilização de prompts.
 - Uma imagem principal `<image1>` e uma referência opcional `<image2>` nos workflows embutidos; a inferência com duas imagens em 6 GB ainda não foi medida.
+- LoRAs adicionais do catálogo (`model_data/qwen21.json › addons`), ligadas pelo botão LoRA do compositor (independente de Presets e da referência); hoje, "Integrar luz e sombra" (experimental, não validada em 6 GB). O texto de apoio da LoRA é prefixado no servidor, mostrado só como contagem de caracteres, e o prompt efetivo vai aos metadados. Ficam fora da assinatura do motor e são aplicadas por `engine_nodes/spe_addon_lora.py`.
+- Modo Remover fundo em lote (BiRefNet nativo do ComfyUI, `background.py`): fotos soltas ou pastas, fila sequencial, exportação em PNG/ZIP. Tempo e memória em 6 GB não medidos. O histórico guarda a imagem original de cada edição e permite comparar.
 - Aprimoramento opcional com Qwen3-0.6B em FP32 na CPU, em processo privado sob demanda, com revisão, cancelamento e recuperação do texto anterior. Não analisa imagens.
 - Todos os presets têm instruções detalhadas e ficam recolhidos por padrão e são acessíveis pelo botão Presets; limpar o prompt permite desfazer.
 

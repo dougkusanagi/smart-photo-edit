@@ -1,0 +1,19 @@
+No Windows:
+
+1. Extraia o ZIP.
+2. Com `uv` instalado, abra o PowerShell na pasta extraída.
+3. Execute:
+
+```powershell
+uv venv --python 3.12
+uv pip install -e .
+.\run.bat
+```
+
+O app abrirá no navegador. O motor e os modelos serão instalados no primeiro preparo, com internet.
+
+Para preparar antecipadamente:
+
+```powershell
+.\.venv\Scripts\python.exe -m smart_photo_edit setup
+```

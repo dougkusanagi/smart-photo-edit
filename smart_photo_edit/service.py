@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import secrets
 import hashlib
 import time
@@ -9,6 +10,8 @@ from dataclasses import dataclass
 from typing import Any, AsyncIterator
 
 from .history import ResultStore
+from . import background
+from .prompt_limits import effective_prompt, validate_prompt
 from .comfy import Cancelled, ComfyClient, ComfyError
 from .workflows import Workflow, WorkflowError
 
@@ -31,9 +34,17 @@ class EditRequest:
     n: int = 1
     strength: float | None = None
     params: dict[str, Any] | None = None
+    addons: tuple[str, ...] = ()
+    mode: str = 'edit'
+    prompt_prefix: str = ''  # texto de apoio das LoRAs adicionais; enviado antes do prompt do usuário
 
     def validate(self) -> None:
-        if not self.prompt.strip():
+        try:
+            validate_prompt(self.prompt, self.prompt_prefix)
+            validate_prompt(self.negative)
+        except ValueError as exc:
+            raise WorkflowError(str(exc)) from exc
+        if not self.prompt.strip() and not self.prompt_prefix.strip():
             raise WorkflowError("Descreva a edição antes de gerar.")
         if self.reference is not None and not sniff_image(self.reference):
             raise WorkflowError('Referência inválida: use PNG, JPG ou WebP.')
@@ -71,7 +82,7 @@ async def run_edit(
         yield {"type": "progress", "p": 0.0, "phase": "Enviando imagem"}
         image_name = await client.upload_image(req.image, req.filename, req.content_type)
         reference_name = None
-        effective_prompt = req.prompt.strip()
+        sent_prompt = effective_prompt(req.prompt, req.prompt_prefix)
         if req.reference:
             if not wf.supports['reference']:
                 raise WorkflowError('Este workflow não suporta uma segunda referência.')
@@ -85,7 +96,7 @@ async def run_edit(
             seed = (base_seed + i) % (MAX_SEED + 1)
             graph = wf.apply(
                 image_name=image_name,
-                prompt=effective_prompt,
+                prompt=sent_prompt,
                 reference_name=reference_name,
                 negative=req.negative.strip(),
                 seed=seed,
@@ -113,17 +124,26 @@ async def run_edit(
                     cancel_event.set()
                     task.cancel()
             data = await client.fetch_image(images[0])
+            if req.mode == background.MODE:
+                try:
+                    data = await asyncio.to_thread(background.apply_alpha, req.image, data)
+                except (OSError, ValueError) as exc:
+                    raise ComfyError('Não consegui aplicar a transparência à foto original: ' + str(exc), 'invalid_background_result') from exc
             metadata = {
                 'duration_seconds': round(time.monotonic() - execution_started, 3),
-                'prompt': effective_prompt, 'user_prompt': req.prompt.strip(),
+                'prompt': sent_prompt, 'user_prompt': req.prompt.strip(),
                 'reference': {'tag': '<image2>', 'filename': req.reference_filename[:120], 'sha256': hashlib.sha256(req.reference).hexdigest()} if req.reference else None, 'negative': req.negative.strip() if wf.bindings.get('negative') else '', 'seed': seed,
                 'strength': req.strength if wf.bindings.get('strength') else None,
                 'workflow': {'id': wf.id, 'name': wf.name}, 'params': wf.param_values(chosen_params),
-                'models': [{key: model[key] for key in ('folder', 'filename') if key in model} for model in wf.requires.get('models', [])],
-                'name': req.source_name[:60], 'source_result': req.source_result,
+                'models': [{key: model[key] for key in ('folder', 'filename', 'label', 'format', 'sha256', 'size_bytes', 'role', 'family') if key in model} for model in wf.requires.get('models', [])],
+                'model_choices': copy.deepcopy(getattr(wf, 'model_selection', {})),
+                'runtime_args': list(getattr(wf, 'runtime_args', [])),
+                'variation': i + 1, 'variations': req.n,
+                'name': req.source_name[:60], 'source_result': req.source_result, 'mode': req.mode,
+                'addons': [{'id': m['addon'], 'filename': m['filename'], 'sha256': m.get('sha256')} for m in wf.requires.get('models', []) if m.get('addon')],
             }
             try:
-                rid = await asyncio.to_thread(store.save, data, metadata)
+                rid = await asyncio.to_thread(store.save, data, metadata, req.image)
             except (OSError, ValueError) as exc:
                 raise ComfyError('Não consegui salvar a edição no histórico: ' + str(exc), 'result_save_failed') from exc
             results.append(await asyncio.to_thread(store.record, rid))

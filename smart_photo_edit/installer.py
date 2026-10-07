@@ -63,7 +63,8 @@ def _bar(name: str) -> Callable[[int, int], None]:
     return cb
 
 
-def install_requirements(wf: Workflow, comfyui_dir: Path, models_dir: Path | None = None, progress: Callable[[int, int], None] | None = None) -> list[str]:
+def install_requirements(wf: Workflow, comfyui_dir: Path, models_dir: Path | None = None, progress: Callable[[int, int], None] | None = None,
+                         on_model: Callable[[dict], None] | None = None) -> list[str]:
     """Instala o que tem URL e ainda não existe. Devolve avisos sobre itens manuais."""
     notes: list[str] = []
     models_dir = models_dir or comfyui_dir / "models"
@@ -91,6 +92,8 @@ def install_requirements(wf: Workflow, comfyui_dir: Path, models_dir: Path | Non
             continue
         if not target.exists():
             print(f"  ↓ {model['folder']}/{model['filename']}")
+            if on_model:
+                on_model(model)
             download(model["url"], target, progress or _bar(model["filename"]))
         if model.get("sha256"):
             receipt = target.with_name(target.name + '.verified.json')

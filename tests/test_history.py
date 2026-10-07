@@ -78,6 +78,17 @@ async def test_history_api_and_each_variation_metadata(make_env, png):
             assert metadata['params']['resolution'] == 1024
             assert metadata['name'] == 'Praia'
             assert metadata['source_result'] == 'anterior.png'
+            assert metadata['model_choices']['image'] == 'image_int8'
+            assert metadata['model_choices']['text_device'] == 'default'
+            assert metadata['variation'] == item['variation'] and metadata['variations'] == 2
+            assert {model['role'] for model in metadata['models']} == {'image', 'text_encoder', 'vae', 'turbo_lora'}
+            assert all(len(model['sha256']) == 64 and model['size_bytes'] > 0 for model in metadata['models'])
+        # Também recupera os detalhes pelo PNG se o índice JSON se perder.
+        (env.state.store.folder / (item['id'] + '.json')).unlink()
+        recovered = env.state.store.record(item['id'])
+        assert recovered['models'] == item['models'] and recovered['model_choices'] == item['model_choices']
+        assert recovered['duration_seconds'] == item['duration_seconds']
+        assert (await (await env.http.get(recovered['original_url'])).read()) == png
     history = await (await env.http.get('/api/history?limit=1')).json()
     assert history['has_more'] and history['items'][0]['id'] == results[1]['id']
     thumb = await env.http.get(history['items'][0]['thumbnail_url'])

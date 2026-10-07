@@ -16,9 +16,11 @@ from . import __version__, config, paths, workflows, models
 from .comfy import ComfyClient, ComfyError
 from .history import image_metadata
 from .prompt_ai import PromptEnhancer
+from .prompt_limits import MAX_PROMPT_CHARS, PromptLimitError, validate_prompt
 from .launcher import ComfyLauncher
 from .runtime import ManagedRuntime
 from .service import EditRequest, ResultStore, run_edit, sniff_image
+from . import background
 from .workflows import WorkflowError
 
 log = logging.getLogger("smart_photo_edit")
@@ -69,12 +71,12 @@ def make_client(request: web.Request) -> ComfyClient:
     return ComfyClient(url or "http://127.0.0.1:1", request.app[SESSION_KEY])
 
 
-def current_workflow(state: AppState) -> workflows.Workflow:
+def current_workflow(state: AppState, addons=()) -> workflows.Workflow:
     wfs, _ = workflows.discover()
     wf = wfs.get(state.settings.workflow) or wfs.get(config.DEFAULT_WORKFLOW) or next(iter(wfs.values()), None)
     if wf is None:
         raise WorkflowError("Nenhum workflow disponível.")
-    return models.configure(wf, state.settings.model_choices.get(wf.id))
+    return models.configure(wf, state.settings.model_choices.get(wf.id), addons)
 
 
 # ───────────────────────── rotas ─────────────────────────
@@ -97,6 +99,7 @@ async def status(request: web.Request) -> web.Response:
         device = {"name": d.get("name"), "vram_total": d.get("vram_total"), "vram_free": d.get("vram_free")}
     return web.json_response({
         "version": __version__,
+        "limits": {"prompt_chars": MAX_PROMPT_CHARS},
         "engine": "comfyui",
         "comfy": {
             "url": state.runtime.url if state.settings.engine_mode == "managed" else state.settings.comfy_url,
@@ -107,6 +110,7 @@ async def status(request: web.Request) -> web.Response:
             "launcher": state.runtime.state if state.settings.engine_mode == "managed" else state.launcher.state,
             "can_launch": state.settings.engine_mode == "managed" or bool(state.settings.comfy_command.strip()),
             "device": device,
+            "download": state.runtime.download,
         },
         "workflow": wf_info,
     })
@@ -116,9 +120,11 @@ async def list_workflows(request: web.Request) -> web.Response:
     state: AppState = request.app[STATE_KEY]
     wfs, errors = workflows.discover()
     active = current_workflow(state).id if wfs else None
+    # Só o motor gerenciado tem pasta de modelos conhecida; num ComfyUI externo o app não sabe o que já existe.
+    models_dir = state.runtime.source / "models" if state.settings.engine_mode == "managed" else None
     return web.json_response({
         "workflows": [{**models.configure(w, state.settings.model_choices.get(w.id)).to_public(active=(w.id == active)),
-                       "model_options": models.public(w, state.settings.model_choices.get(w.id))} for w in wfs.values()],
+                       "model_options": models.public(w, state.settings.model_choices.get(w.id), models_dir)} for w in wfs.values()],
         "errors": errors,
         "active": active,
         "user_dir": str(paths.user_workflows_dir()),
@@ -249,6 +255,14 @@ async def start_comfy(request: web.Request) -> web.Response:
     return web.json_response({"ok": True, "launcher": state.launcher.state})
 
 
+async def cancel_comfy(request: web.Request) -> web.Response:
+    state: AppState = request.app[STATE_KEY]
+    if state.edit_lock.locked():
+        return json_error("Cancele a edição em andamento para interromper o preparo.", 409)
+    await state.runtime.cancel()
+    return web.json_response({"ok": True})
+
+
 async def edit(request: web.Request) -> web.StreamResponse:
     state: AppState = request.app[STATE_KEY]
     if state.prompt_ai.busy:
@@ -275,12 +289,25 @@ async def edit(request: web.Request) -> web.StreamResponse:
     if not kind:
         return json_error("Formato de imagem não suportado. Use PNG, JPG ou WebP.", 415, "unsupported_media")
     try:
-        wf = current_workflow(state)
+        addons = options.get("addons") or []
+        if not isinstance(addons, list) or not all(isinstance(a, str) for a in addons) or len(addons) > 3:
+            raise ValueError("complementos inválidos")
+        if addons and options.get("mode", "edit") == "edit" and state.settings.engine_mode != "managed":
+            return json_error("LoRAs adicionais exigem o motor local gerenciado pelo app.", 400, "addon_unsupported")
+        mode = options.get("mode", "edit")
+        if mode not in ("edit", background.MODE):
+            raise ValueError("modo inválido")
+        if mode == background.MODE:
+            addons, reference = [], None
+            wf = background.workflow()
+        else:
+            wf = current_workflow(state, addons)
         req = EditRequest(
             image=image,
             filename=f"spe_{wf.id}.{kind[1]}",
             content_type=kind[0],
-            prompt=str(options.get("prompt", "")),
+            prompt=background.LABEL if mode == background.MODE else str(options.get("prompt", "")),
+            mode=mode,
             reference=reference, reference_filename=reference_filename,
             source_name=str(options.get("name", "Sem título")),
             source_result=options.get("source_result") if isinstance(options.get("source_result"), str) else None,
@@ -288,9 +315,15 @@ async def edit(request: web.Request) -> web.StreamResponse:
             seed=int(options["seed"]) if options.get("seed") not in (None, "") else None,
             n=int(options.get("n", 1)),
             strength=float(options["strength"]) if options.get("strength") is not None else None,
-            params=state.settings.workflow_params.get(wf.id),
+            params=None if mode == background.MODE else state.settings.workflow_params.get(wf.id),
+            addons=tuple(addons),
+            prompt_prefix=' '.join(models.CATALOG['addons'][a]['prompt'] for a in dict.fromkeys(addons)),
         )
-    except (ValueError, TypeError) as exc:
+        validate_prompt(req.prompt, req.prompt_prefix)
+        validate_prompt(req.negative)
+    except PromptLimitError as exc:
+        return json_error(str(exc), 422, 'prompt_too_long')
+    except (ValueError, TypeError, WorkflowError) as exc:
         return json_error(f"Opções inválidas: {exc}")
 
     resp = web.StreamResponse(headers={"Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store"})
@@ -321,6 +354,9 @@ async def edit(request: web.Request) -> web.StreamResponse:
                     if not await state.runtime.ensure(wf, request.app[SESSION_KEY], cancel, send):
                         await send({"type": "cancelled"})
                         return resp
+                    if addons and not await state.runtime.ensure_addons(wf, cancel, send):
+                        await send({"type": "cancelled"})
+                        return resp
                 except ComfyError as exc:
                     await send({"type": "error", "message": str(exc), "code": exc.code})
                     return resp
@@ -337,7 +373,7 @@ async def edit(request: web.Request) -> web.StreamResponse:
                         if cancel.is_set() or await client.system_stats() is not None:
                             break
                         await asyncio.sleep(0.5)
-            async for ev in run_edit(client, wf, state.settings.workflow_params.get(wf.id), req, state.store, cancel):
+            async for ev in run_edit(client, wf, req.params, req, state.store, cancel):
                 await send(ev)
     finally:
         watcher.cancel()
@@ -362,6 +398,10 @@ async def enhance_prompt(request: web.Request) -> web.Response:
         has_reference = data.get('has_reference', False)
         if not isinstance(prompt, str) or not prompt.strip() or not isinstance(has_reference, bool):
             return json_error('Digite um prompt válido.')
+        try:
+            validate_prompt(prompt)
+        except ValueError as exc:
+            return json_error(str(exc), 422, 'prompt_too_long')
     except (ValueError, AttributeError):
         return json_error('Solicitação de aprimoramento inválida.')
     return web.json_response(state.prompt_ai.start(prompt.strip(), has_reference, state.edit_lock), status=202)
@@ -408,6 +448,42 @@ async def get_thumbnail(request: web.Request) -> web.StreamResponse:
     return web.FileResponse(path, headers={'Cache-Control': 'private, max-age=86400', 'Content-Type': 'image/webp'})
 
 
+async def get_original(request: web.Request) -> web.StreamResponse:
+    path = await asyncio.to_thread(request.app[STATE_KEY].store.original, request.match_info['rid'])
+    if path is None:
+        return json_error('Esta edição não guardou a imagem original.', 404)
+    kind = sniff_image(await asyncio.to_thread(path.read_bytes))
+    return web.FileResponse(path, headers={'Cache-Control': 'private, max-age=86400', 'Content-Type': kind[0] if kind else 'application/octet-stream'})
+
+
+async def zip_results(request: web.Request) -> web.Response:
+    """Junta resultados do histórico em um ZIP (exportação de lotes)."""
+    import io
+    import re
+    import zipfile
+    store = request.app[STATE_KEY].store
+    try:
+        items = (await request.json())['items']
+        assert isinstance(items, list) and 0 < len(items) <= 500
+    except (ValueError, KeyError, AssertionError, TypeError):
+        return json_error('Lista de imagens inválida.')
+    buffer, used = io.BytesIO(), set()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_STORED) as archive:
+        for item in items:
+            path = store.path(str(item.get('id', ''))) if isinstance(item, dict) else None
+            if path is None:
+                continue
+            base = re.sub(r'[\\/:*?"<>|]+', '', str(item.get('name') or 'imagem')).strip()[:80] or 'imagem'
+            name, n = f'{base}.png', 2
+            while name in used:
+                name, n = f'{base}-{n}.png', n + 1
+            used.add(name)
+            archive.write(path, name)
+    if not used:
+        return json_error('Nenhuma imagem encontrada.', 404)
+    return web.Response(body=buffer.getvalue(), content_type='application/zip', headers={'Cache-Control': 'no-store'})
+
+
 async def delete_history(request: web.Request) -> web.Response:
     store = request.app[STATE_KEY].store
     if not await asyncio.to_thread(store.delete, request.match_info['rid']):
@@ -449,6 +525,7 @@ def create_app(state: AppState) -> web.Application:
         web.get("/api/settings", get_settings),
         web.put("/api/settings", put_settings),
         web.post("/api/comfy/start", start_comfy),
+        web.post("/api/comfy/cancel", cancel_comfy),
         web.post("/api/edit", edit),
         web.post("/api/prompt/enhance", enhance_prompt),
         web.get("/api/prompt/jobs/{id}", prompt_job),
@@ -457,6 +534,8 @@ def create_app(state: AppState) -> web.Application:
         web.post("/api/image-metadata", read_image_metadata),
         web.get("/api/history", list_history),
         web.get("/api/history/{rid}/thumbnail", get_thumbnail),
+        web.get("/api/history/{rid}/original", get_original),
+        web.post("/api/results/zip", zip_results),
         web.delete("/api/history/{rid}", delete_history),
     ])
     app.on_startup.append(_on_startup)

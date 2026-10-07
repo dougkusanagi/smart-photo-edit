@@ -14,7 +14,7 @@ from pathlib import Path
 from . import paths
 from .comfy import ComfyClient, ComfyError
 from .installer import download, install_requirements, install_extensions
-from .models import signature
+from .models import missing_bytes, signature
 from .launcher import ComfyLauncher
 from .workflows import Workflow
 
@@ -36,6 +36,8 @@ class ManagedRuntime:
         self.stopping = threading.Event()
         self.workflow_id = ''
         self.workflow_signature = ''
+        self.download: dict | None = None  # {'done', 'total'} em bytes enquanto baixa modelos
+        self._file = {'base': 0, 'size': 0}
 
     @property
     def state(self):
@@ -45,7 +47,7 @@ class ManagedRuntime:
 
     def _progress(self, done, total):
         if self.stopping.is_set():
-            raise RuntimeError('Preparação interrompida ao fechar o app.')
+            raise RuntimeError('Preparo interrompido.')
         pct = f' · {done * 100 // total}%' if total else ''
         self.phase = 'Baixando componentes do motor local' + pct
 
@@ -112,7 +114,8 @@ class ManagedRuntime:
                 await self._pip(*packages)
                 extensions_marker.write_text(expected)
             self.phase = 'Preparando os modelos selecionados'
-            notes = await asyncio.to_thread(install_requirements, wf, self.source, None, self._progress)
+            notes = await asyncio.to_thread(install_requirements, wf, self.source, None, self._models_progress(wf), self._next_model)
+            self.download = None
             missing = [n for n in notes if n.startswith('Baixe manualmente:')]
             if missing:
                 raise RuntimeError('Este workflow precisa de arquivos sem download automático: ' + '; '.join(missing))
@@ -133,9 +136,46 @@ class ManagedRuntime:
             self.workflow_id = wf.id
             self.workflow_signature = signature(wf)
         except Exception as exc:
+            self.download = None
             self.error = str(exc)
             self.phase = self.error
             raise ComfyError(f'Não consegui preparar o motor local: {exc}', 'engine_setup_failed') from exc
+
+    def _models_progress(self, wf: Workflow):
+        """Progresso somado de todos os modelos que faltam, em vez de um percentual por arquivo."""
+        models_dir = self.source / 'models'
+        pending = [m for m in wf.requires.get('models', []) if not (models_dir / m['folder'] / m['filename']).exists()]
+        total = sum(m.get('size_bytes', 0) for m in pending)
+        self._file = {'base': 0, 'size': 0}
+        if total:
+            self.download = {'done': total - missing_bytes(pending, models_dir), 'total': total}
+
+        def progress(done, size):
+            if self.stopping.is_set():
+                raise RuntimeError('Preparo interrompido.')
+            if not size or not self.download:
+                self.phase = 'Verificando os modelos baixados'
+                return
+            self.download = {'done': min(total, self._file['base'] + done), 'total': total}
+            gb = lambda n: f'{n / 1e9:.1f}'.replace('.', ',')
+            self.phase = f'Baixando modelos · {gb(self.download["done"])} de {gb(total)} GB'
+        return progress
+
+    def _next_model(self, model: dict):
+        self._file['base'] += self._file['size']
+        self._file['size'] = model.get('size_bytes', 0)
+
+    async def cancel(self):
+        """Interrompe o preparo; os arquivos .part permitem retomar o download depois."""
+        if not (self.task and not self.task.done()):
+            return
+        self.stopping.set()
+        if self.install_proc and self.install_proc.returncode is None:
+            self.install_proc.terminate()
+        await asyncio.gather(self.task, return_exceptions=True)
+        self.stopping.clear()
+        self.error = ''
+        self.phase = 'Preparo cancelado. O download continua de onde parou.'
 
     def start(self, wf: Workflow):
         if self.task and not self.task.done():
@@ -173,6 +213,27 @@ class ManagedRuntime:
         await asyncio.to_thread(self.launcher.stop)
         self.error = self.phase = f'O motor demorou para iniciar. Consulte {paths.log_file()}.'
         raise ComfyError(self.error, 'launch_failed')
+
+    async def ensure_addons(self, wf: Workflow, cancel, emit):
+        """Baixa as LoRAs adicionais da edição (sem reiniciar o motor). False se cancelado."""
+        if not any(m.get('addon') for m in wf.requires.get('models', [])):
+            return True
+        task = asyncio.create_task(asyncio.to_thread(install_requirements, wf, self.source, None, self._progress))
+        try:
+            while not task.done():
+                if cancel.is_set():
+                    self.stopping.set()  # interrompe o download; o .part permite retomar
+                    await asyncio.gather(task, return_exceptions=True)
+                    self.stopping.clear()
+                    return False
+                await emit({'type': 'progress', 'p': 0, 'phase': self.phase.replace('componentes do motor local', 'LoRA adicional')})
+                await asyncio.sleep(.5)
+            notes = await task
+        except Exception as exc:
+            raise ComfyError(f'Não consegui preparar a LoRA adicional: {exc}', 'addon_setup_failed') from exc
+        if any(n.startswith('Baixe manualmente:') for n in notes):
+            raise ComfyError('A LoRA adicional não tem download automático.', 'addon_setup_failed')
+        return True
 
     async def close(self):
         self.stopping.set()

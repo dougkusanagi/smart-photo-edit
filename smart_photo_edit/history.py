@@ -24,7 +24,7 @@ def image_metadata(data: bytes) -> dict | None:
             return None
     if not isinstance(record, dict) or not isinstance(record.get('prompt'), str):
         return None
-    return {key: record[key] for key in ('prompt', 'seed', 'name', 'workflow', 'params', 'created_at', 'duration_seconds') if key in record}
+    return {key: record[key] for key in ('prompt', 'seed', 'name', 'workflow', 'params', 'created_at', 'duration_seconds', 'addons', 'user_prompt', 'mode', 'models', 'model_choices', 'runtime_args', 'reference', 'negative', 'strength', 'variation', 'variations') if key in record}
 
 
 class ResultStore:
@@ -49,7 +49,7 @@ class ResultStore:
         p = self.folder / rid
         return p if p.is_file() else None
 
-    def save(self, data: bytes, metadata: dict | None = None) -> str:
+    def save(self, data: bytes, metadata: dict | None = None, original: bytes | None = None) -> str:
         rid = secrets.token_hex(12) + '.png'
         record = {**(metadata or {}), 'id': rid, 'created_at': datetime.now(timezone.utc).isoformat()}
         with Image.open(io.BytesIO(data)) as image:
@@ -67,6 +67,8 @@ class ResultStore:
             image.save(temporary, format='PNG', pnginfo=info, **{key: image.info[key] for key in ('icc_profile', 'exif') if key in image.info})
             temporary.replace(target)
             # O PNG é a fonte de verdade; o JSON pode ser reconstruído se a escrita falhar.
+            if original:
+                (self.folder / (rid + '.orig')).write_bytes(original)
             self._write_record(rid, record)
         return rid
 
@@ -96,7 +98,14 @@ class ResultStore:
             record.setdefault('prompt', '')
             record.setdefault('created_at', datetime.fromtimestamp(target.stat().st_mtime, timezone.utc).isoformat())
             self._write_record(rid, record)
-        return {**record, 'id': rid, 'url': f'/api/results/{rid}', 'thumbnail_url': f'/api/history/{rid}/thumbnail'}
+        extra = {'original_url': f'/api/history/{rid}/original'} if (self.folder / (rid + '.orig')).is_file() else {}
+        return {**record, 'id': rid, 'url': f'/api/results/{rid}', 'thumbnail_url': f'/api/history/{rid}/thumbnail', **extra}
+
+    def original(self, rid):
+        if self.path(rid) is None:
+            return None
+        target = self.folder / (rid + '.orig')
+        return target if target.is_file() else None
 
     def list(self, offset=0, limit=30):
         files = sorted((p for p in self.folder.iterdir() if re.fullmatch(r'[a-f0-9]{24}\.(png|jpg|webp)', p.name)), key=lambda p: (p.stat().st_mtime_ns, p.name), reverse=True)
@@ -126,6 +135,6 @@ class ResultStore:
         if target is None:
             return False
         target.unlink()
-        for suffix in ('.json', '.thumb.webp'):
+        for suffix in ('.json', '.thumb.webp', '.orig'):
             (self.folder / (rid + suffix)).unlink(missing_ok=True)
         return True

@@ -193,3 +193,64 @@ async def test_index_served(make_env):
     env = await make_env()
     r = await env.http.get("/")
     assert r.status == 200 and "Smart Photo Edit" in await r.text()
+
+
+async def test_addon_requires_managed_engine_and_unknown_ids_fail(make_env, png):
+    env = await make_env()
+    r = await env.http.post("/api/edit", data=edit_form(png, addons=["light-blend"]))
+    assert r.status == 400 and (await r.json())["code"] == "addon_unsupported"
+    r = await env.http.post("/api/edit", data=edit_form(png, addons="light-blend"))
+    assert r.status == 400
+
+
+async def test_addon_prompt_prefix_is_sent_and_recorded_separately():
+    from smart_photo_edit import models
+    from smart_photo_edit.service import EditRequest
+    req = EditRequest(image=b"", filename="x.png", content_type="image/png", prompt="", addons=("light-blend",),
+                      prompt_prefix=models.CATALOG["addons"]["light-blend"]["prompt"])
+    req.validate()  # só a LoRA já é uma instrução válida
+    with pytest.raises(Exception):
+        EditRequest(image=b"", filename="x.png", content_type="image/png", prompt="").validate()
+
+
+async def test_original_is_kept_and_served_for_comparison(make_env, png):
+    env = await make_env()
+    events = await read_events(await env.http.post("/api/edit", data=edit_form(png)))
+    item = events[-1]["images"][0]
+    assert item["original_url"].endswith("/original")
+    got = await env.http.get(item["original_url"])
+    assert got.status == 200 and got.content_type == "image/png" and await got.read() == png
+    listed = (await (await env.http.get("/api/history")).json())["items"][0]
+    assert listed["original_url"] == item["original_url"]
+    assert (await env.http.delete(f"/api/history/{item['id']}")).status == 200
+    assert (await env.http.get(item["original_url"])).status == 404
+
+
+async def test_remove_background_mode_uses_birefnet_graph_not_the_edit_workflow(make_env, png):
+    env = await make_env()
+    events = await read_events(await env.http.post("/api/edit", data=edit_form(png, mode="remove_background", prompt="ignorado", addons=["light-blend"])))
+    assert events[-1]["type"] == "done"
+    item = events[-1]["images"][0]
+    assert item["mode"] == "remove_background" and item["prompt"] == "Remover fundo (BiRefNet)" and item["addons"] == []
+    graph = next(iter(env.comfy.prompts.values()))
+    assert {n["class_type"] for n in graph.values()} >= {"RemoveBackground", "JoinImageWithAlpha", "LoadBackgroundRemovalModel"}
+    assert not any(n["class_type"] in ("UNETLoader", "SPEAddonLora") for n in graph.values())
+    import io
+    from PIL import Image
+    result = Image.open(io.BytesIO(await (await env.http.get(item['url'])).read()))
+    original = Image.open(io.BytesIO(png))
+    assert result.size == original.size
+    assert result.convert('RGB').tobytes() == original.convert('RGB').tobytes()
+    assert result.getchannel('A').getextrema() == (128, 128)
+
+
+async def test_results_zip_names_are_unique(make_env, png):
+    import io, zipfile
+    env = await make_env()
+    ids = []
+    for _ in range(2):
+        events = await read_events(await env.http.post("/api/edit", data=edit_form(png)))
+        ids.append(events[-1]["images"][0]["id"])
+    resp = await env.http.post("/api/results/zip", json={"items": [{"id": i, "name": "foto/1"} for i in ids] + [{"id": "x" * 24 + ".png"}]})
+    assert resp.status == 200
+    assert sorted(zipfile.ZipFile(io.BytesIO(await resp.read())).namelist()) == ["foto1-2.png", "foto1.png"]

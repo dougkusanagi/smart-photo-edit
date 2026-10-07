@@ -142,7 +142,8 @@ async def test_preparation_installs_in_private_environment_and_launches_argv(mon
     await runtime.start(wf)
     assert (runtime.root / 'dependencies.ready').exists()
     assert pip_calls[-1] == ('-r', str(runtime.source / 'requirements.txt'))
-    install.assert_called_once_with(wf, runtime.source, None, runtime._progress)
+    install.assert_called_once()
+    assert install.call_args.args[:3] == (wf, runtime.source, None) and install.call_args.args[4] == runtime._next_model
     argv, cwd = runtime.launcher.start_argv.call_args.args
     assert argv[:2] == [str(runtime.python), str(runtime.source / 'main.py')]
     assert argv[argv.index('--listen') + 1] == '127.0.0.1'

@@ -60,9 +60,17 @@
   .scroll-thin { scrollbar-width: thin; scrollbar-color: rgb(var(--ink) / .2) transparent; }
 
   @media (max-width: 639px) {
-    #app > header { grid-template-columns: minmax(0, 1fr) auto; padding-inline: 12px; }
+    #app > header { padding-inline: 12px; gap: 8px; }
     #titleWrap, .hide-sm { display: none; }
     #fitbox { left: 92px; right: 16px; }
+  }
+
+  #app > header { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  #modeSeg { justify-self: center; }
+  #titleWrap { align-items: flex-start; overflow: hidden; }
+  #name { width: 100%; max-width: 200px; text-align: left; }
+  @media (min-width: 640px) and (max-width: 1099px) {
+    #app > header .hide-sm { display: none; }
   }
 
   /* Vidro */
@@ -90,6 +98,29 @@
   .rise { animation: rise .5s cubic-bezier(.32,.72,0,1) backwards; }
   .breathe { animation: breathe 1.4s ease-in-out infinite; }
   #historyPanel:not([hidden]) { animation: enter-r .28s cubic-bezier(.32,.72,0,1) backwards; }
+
+  /* Ajustes avançados: linhas de opção, cartões de perfil e progresso. */
+  .opt-row { position: relative; display: flex; width: 100%; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius: 12px; text-align: left;
+    background: rgb(var(--line) / .04); transition: background-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+  .opt-row:hover { background: rgb(var(--line) / .07); }
+  .opt-row:active { transform: scale(.995); }
+  .opt-row[aria-checked="true"], .prof-card[aria-checked="true"] { background: rgb(var(--accent) / .08); box-shadow: inset 0 0 0 1.5px rgb(var(--accent) / .75); }
+  .radio-dot { margin-top: 1px; width: 16px; height: 16px; flex: none; border-radius: 999px; box-shadow: inset 0 0 0 1.5px rgb(var(--line) / .28); transition: box-shadow .18s cubic-bezier(.32,.72,0,1); }
+  [aria-checked="true"] > .radio-dot { box-shadow: inset 0 0 0 5px rgb(var(--accent)); }
+  .prof-card { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 1px; padding: 10px 12px 9px; border-radius: 12px; text-align: left;
+    background: rgb(var(--line) / .04); transition: background-color .15s ease, box-shadow .15s ease, transform .15s ease, opacity .15s ease; }
+  .prof-card:hover { background: rgb(var(--line) / .07); }
+  .prof-card:active { transform: scale(.98); }
+  .prof-card[aria-disabled="true"] { cursor: default; transform: none; }
+  .prof-card[aria-disabled="true"]:not([aria-checked="true"]) { opacity: .5; }
+  .prof-status { margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: rgb(var(--mute)); }
+  .meter { height: 4px; overflow: hidden; border-radius: 999px; background: rgb(var(--line) / .1); }
+  .meter > span { display: block; height: 100%; border-radius: inherit; background: rgb(var(--accent)); transform-origin: left; transition: transform .4s ease-out; }
+  .meter-busy > span { animation: breathe 1.4s ease-in-out infinite; }
+  .disclosure > summary { display: inline-flex; cursor: pointer; align-items: center; gap: 6px; list-style: none; border-radius: 6px; }
+  .disclosure > summary::-webkit-details-marker { display: none; }
+  .disclosure > summary::after { content: ""; width: 6px; height: 6px; margin-left: 2px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .18s ease; }
+  .disclosure[open] > summary::after { transform: translateY(-2px) rotate(45deg); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; transition-delay: 0s !important; }
@@ -134,7 +165,7 @@
   .look:active { transform: scale(.97); }
   .look[aria-pressed="true"] { box-shadow: 0 0 0 2px rgb(var(--accent)); }
   .look::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgb(0 0 0 / .45)); }
-  .look-label { position: absolute; left: 10px; bottom: 7px; z-index: 1; font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .4); }
+  .look-label { position: absolute; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; left: 10px; bottom: 7px; z-index: 1; font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .4); }
 
   /* Estado vazio */
   #stack .card { position: absolute; width: 300px; height: 188px; border-radius: 12px; background-size: cover; background-position: center;
@@ -149,7 +180,29 @@
   #stack:active .c2 { transform: scale(.99); }
   body[data-drag="true"] #dropOverlay { opacity: 1; }
 
+  /* Xadrez sob a imagem: mostra a transparência de PNGs RGBA e não aparece em fotos opacas. */
+  .checker { background: conic-gradient(rgb(var(--ink) / .1) 25%, rgb(var(--ink) / .04) 0 50%, rgb(var(--ink) / .1) 0 75%, rgb(var(--ink) / .04) 0) 0 0 / 16px 16px; }
+  #app[data-mode="bg"] .edit-only { display: none; }
+  .bg-card { content-visibility: auto; contain-intrinsic-size: 220px 280px; }
   .pane { cursor: grab; } .pane.grabbing { cursor: grabbing; }
+  .pane > img { max-width: none; }
+  #historyPreview { width: min(1100px, calc(100vw - 32px)); max-height: 90vh; padding: 0; border: 0; border-radius: 16px; color: rgb(var(--ink)); background: rgb(var(--bg)); box-shadow: var(--frame-shadow); }
+  #historyPreview::backdrop { background: rgb(0 0 0 / .65); }
+  .history-preview-body { overflow: auto; max-height: calc(90vh - 56px); padding: 20px; }
+  .history-preview-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .history-preview-pair figure { min-width: 0; }
+  .history-preview-pair img { display: block; width: 100%; height: min(46vh, 440px); object-fit: contain; border-radius: 12px; }
+  .history-preview-pair figcaption { margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+  .history-preview-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin-top: 20px; font-size: 12px; }
+  .history-preview-facts dt { color: rgb(var(--mute)); }
+  .history-preview-facts dd { margin-top: 3px; overflow-wrap: anywhere; }
+  #promptLimitMessage { color: rgb(var(--danger)); }
+  @media (max-width: 639px) {
+    .history-preview-body { padding: 16px; }
+    .history-preview-pair { grid-template-columns: minmax(0, 1fr); }
+    .history-preview-pair img { height: 30vh; }
+    .history-preview-facts { grid-template-columns: minmax(0, 1fr); }
+  }
   #splitHandle:focus-visible { outline: none; }
   #splitHandle:focus-visible .grip { box-shadow: var(--glass-shadow), 0 0 0 3px rgb(var(--accent) / .65); }
   #splitUI:active .grip { transform: scale(1.1); }
@@ -199,30 +252,38 @@
   <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2.6 7"/><path d="M3 4v7h7"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
   <symbol id="i-corner-up-left" viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></symbol>
 </svg>
 
-<div id="app" class="relative flex h-full flex-col">
+<div id="app" class="relative flex h-full flex-col" data-mode="edit">
 
   <!-- Barra de ferramentas -->
   <header class="relative z-30 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-line/[.06] bg-bg/55 px-3 backdrop-blur-2xl backdrop-saturate-150">
-    <div class="flex items-center gap-2 pl-1">
+    <div class="flex min-w-0 items-center gap-2 pl-1">
       <svg class="ic text-accent" style="width:18px;height:18px"><use href="#i-sparkles"/></svg>
-      <span class="hidden text-[13px] font-semibold tracking-[-.012em] md:inline">Smart Photo Edit</span>
+      <span class="hidden text-[13px] font-semibold tracking-[-.012em] xl:inline">Smart Photo Edit</span>
+      <div id="titleWrap" class="edit-only flex min-w-0 flex-col invisible">
+        <input id="name" value="Sem título" aria-label="Nome do arquivo" spellcheck="false" maxlength="60"
+               class="h-[22px] rounded-md bg-transparent px-2 text-[13px] font-semibold tracking-[-.012em] hover:bg-line/[.06] focus-visible:bg-line/[.08] focus-visible:ring-2 focus-visible:ring-accent/50">
+        <span id="meta" class="-mt-px truncate px-2 text-[11px] tabular-nums text-faint"></span>
+      </div>
     </div>
 
-    <div id="titleWrap" class="flex min-w-0 flex-col items-center invisible">
-      <input id="name" value="Sem título" aria-label="Nome do arquivo" spellcheck="false" maxlength="60"
-             class="h-[22px] max-w-[40vw] rounded-md bg-transparent px-2 text-center text-[13px] font-semibold tracking-[-.012em] hover:bg-line/[.06] focus-visible:bg-line/[.08] focus-visible:ring-2 focus-visible:ring-accent/50">
-      <span id="meta" class="-mt-px text-[11px] tabular-nums text-faint"></span>
+    <div id="modeSeg" class="seg seg-flat grid-cols-2" role="group" aria-label="Modo">
+      <button id="modeEdit" class="seg-btn gap-1.5 !px-3" aria-label="Editar" aria-pressed="true" data-tip="Editar com instruções" data-keys="alt+1"><svg class="ic"><use href="#i-wand"/></svg><span class="hidden sm:inline">Editar</span></button>
+      <button id="modeBg" class="seg-btn gap-1.5 !px-3" aria-label="Remover fundo" aria-pressed="false" data-tip="Remover o fundo de várias fotos" data-keys="alt+2"><svg class="ic"><use href="#i-scissors"/></svg><span class="hidden sm:inline">Remover fundo</span></button>
     </div>
 
     <div class="flex items-center justify-end gap-1">
-      <div class="hide-sm flex items-center">
+      <div class="edit-only hide-sm flex items-center">
         <button id="undoBtn" class="icon-btn" data-tip="Desfazer" data-keys="mod+Z" aria-label="Desfazer"><svg class="ic"><use href="#i-undo"/></svg></button>
         <button id="redoBtn" class="icon-btn" data-tip="Refazer" data-keys="mod+shift+Z" aria-label="Refazer"><svg class="ic"><use href="#i-redo"/></svg></button>
       </div>
-      <div id="viewSeg" class="seg seg-flat hide-sm mx-1 grid-cols-3" role="group" aria-label="Modo de visualização">
+      <div id="viewSeg" class="edit-only seg seg-flat hide-sm mx-1 grid-cols-3" role="group" aria-label="Modo de visualização">
         <button id="singleBtn" class="seg-btn !w-8 !px-0" data-tip="Editado" data-keys="Esc" aria-label="Ver só a edição" aria-pressed="true"><svg class="ic"><use href="#i-image"/></svg></button>
         <button id="compareBtn" class="seg-btn !w-8 !px-0" data-tip="Comparar antes e depois" data-keys="C" aria-label="Comparar antes e depois" aria-pressed="false"><svg class="ic"><use href="#i-split"/></svg></button>
         <button id="sbsBtn" class="seg-btn !w-8 !px-0" data-tip="Lado a lado" data-keys="L" aria-label="Lado a lado com zoom sincronizado" aria-pressed="false"><svg class="ic"><use href="#i-columns"/></svg></button>
@@ -232,7 +293,7 @@
         <svg class="ic"><use href="#i-settings"/></svg>
         <span id="engDot" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-faint ring-2 ring-bg"></span>
       </button>
-      <button id="exportBtn" class="btn-primary ml-1" data-tip="Exportar" data-keys="mod+S"><svg class="ic"><use href="#i-download"/></svg><span class="hidden sm:inline">Exportar</span></button>
+      <button id="exportBtn" class="edit-only btn-primary ml-1" data-tip="Exportar" data-keys="mod+S"><svg class="ic"><use href="#i-download"/></svg><span class="hidden sm:inline">Exportar</span></button>
     </div>
   </header>
 
@@ -244,7 +305,7 @@
     <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 75% 70% at 50% 42%, transparent 30%, rgb(var(--canvas) / .75) 100%)"></div>
 
     <div id="fitbox" class="absolute bottom-[calc(var(--dock)+36px)] left-24 right-[calc(6rem+var(--side))] top-6 flex items-center justify-center">
-      <div id="frame" class="relative overflow-hidden rounded-[10px] opacity-0 transition-opacity duration-200" style="width:0;height:0;box-shadow:var(--frame-shadow)">
+      <div id="frame" class="checker relative overflow-hidden rounded-[10px] opacity-0 transition-opacity duration-200" style="width:0;height:0;box-shadow:var(--frame-shadow)">
         <div id="layers" class="absolute inset-0"></div>
         <div id="splitUI" class="pop absolute inset-0 z-20 cursor-ew-resize touch-none" data-open="false">
           <span id="lblBefore" class="glass absolute left-3 top-3 inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold transition-opacity duration-150">Antes</span>
@@ -264,11 +325,11 @@
         </div>
       </div>
       <div id="sbs" class="pop absolute inset-0 flex items-center justify-center gap-3" data-open="false">
-        <div class="pane relative touch-none overflow-hidden rounded-[10px]" style="box-shadow:var(--frame-shadow)" aria-label="Original">
+        <div class="pane checker relative touch-none overflow-hidden rounded-[10px]" style="box-shadow:var(--frame-shadow)" aria-label="Original">
           <img alt="Original" draggable="false" class="pointer-events-none absolute left-0 top-0 h-full w-full origin-top-left select-none object-contain">
           <span class="glass pointer-events-none absolute left-3 top-3 inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold">Original</span>
         </div>
-        <div class="pane relative touch-none overflow-hidden rounded-[10px]" style="box-shadow:var(--frame-shadow)" aria-label="Editado">
+        <div class="pane checker relative touch-none overflow-hidden rounded-[10px]" style="box-shadow:var(--frame-shadow)" aria-label="Editado">
           <img alt="Editado" draggable="false" class="pointer-events-none absolute left-0 top-0 h-full w-full origin-top-left select-none object-contain">
           <span class="glass pointer-events-none absolute left-3 top-3 inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold">Editado</span>
         </div>
@@ -331,7 +392,15 @@
         <div id="popLooks" class="pop absolute bottom-full left-0 z-30 mb-2 w-[min(100%,460px)]" data-open="false">
           <div class="pop-panel glass rounded-[18px] p-3" style="transform-origin:0 100%;--glass-a:.92" role="dialog" aria-label="Presets de edição">
             <p class="px-1 pb-2.5 text-[12px] text-mute">Escolha um ponto de partida. O texto fica editável antes de gerar.</p>
-            <div id="looks" class="grid grid-cols-3 gap-2" aria-label="Presets de edição"></div>
+            <div id="looks" class="grid grid-cols-4 gap-2" aria-label="Presets de edição"></div>
+          </div>
+        </div>
+
+        <!-- LoRAs adicionais -->
+        <div id="popAddons" class="pop absolute bottom-full left-0 z-30 mb-2 w-[min(100%,460px)]" data-open="false">
+          <div class="pop-panel glass rounded-[18px] p-3" style="transform-origin:0 100%;--glass-a:.92" role="dialog" aria-label="LoRAs adicionais">
+            <p class="px-1 pb-2.5 text-[12px] text-mute">Complementos que mudam o modelo nesta edição. O texto de apoio da LoRA vai junto, sem aparecer no seu prompt.</p>
+            <div id="addons" class="space-y-2"></div>
           </div>
         </div>
 
@@ -399,31 +468,35 @@
             </div>
           </div>
 
-          <!-- Referência <image2> -->
-          <div id="referenceInfo" class="relative hidden px-4 pt-3">
-            <div class="inline-flex h-9 items-center gap-1 rounded-[11px] bg-line/[.07] pl-1 pr-1">
+          <!-- Anexos: referência <image2> e LoRAs adicionais -->
+          <div id="attachRow" class="relative hidden flex-wrap items-center gap-2 px-4 pt-3">
+            <div id="referenceInfo" class="hidden h-9 items-center gap-1 rounded-[11px] bg-line/[.07] pl-1 pr-1">
               <button id="referenceTag" class="flex h-7 items-center gap-2 rounded-[8px] pl-0.5 pr-2 text-[12px] font-medium hover:bg-line/[.08] active:scale-[.97]" data-tip="Inserir &lt;image2&gt; no prompt" data-tip-pos="top" aria-label="Inserir &lt;image2&gt; no prompt">
                 <img id="referencePreview" alt="Referência &lt;image2&gt;" class="h-6 w-6 rounded-[6px] object-cover">
                 <span>&lt;image2&gt;</span>
               </button>
               <button id="removeReference" class="icon-btn icon-btn-sm !h-6 !w-6" aria-label="Remover referência" data-tip="Remover referência" data-tip-pos="top"><svg class="ic ic-sm"><use href="#i-x"/></svg></button>
             </div>
+            <div id="addonChips" class="contents"></div>
           </div>
 
           <!-- Texto -->
           <div class="relative flex items-start gap-1 pl-4 pr-2 pt-3">
-            <textarea id="prompt" rows="1" aria-label="Descreva a edição" spellcheck="true" autocomplete="off"
+            <textarea id="prompt" rows="1" aria-label="Descreva a edição" aria-describedby="counter promptLimitMessage" spellcheck="true" autocomplete="off"
                       class="max-h-40 min-h-7 flex-1 resize-none bg-transparent py-1 text-[15px] leading-6 tracking-[-.011em] placeholder:text-faint select-text"></textarea>
             <button id="clearPrompt" class="icon-btn icon-btn-sm shrink-0" aria-label="Limpar prompt" data-tip="Limpar prompt"><svg class="ic"><use href="#i-circle-x"/></svg></button>
           </div>
 
+          <p id="promptLimitMessage" class="hidden px-4 pt-1 text-[12px] leading-relaxed" role="status"></p>
           <!-- Ações -->
           <div class="relative flex items-center gap-0.5 p-2">
             <input id="referenceFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
             <button id="referenceBtn" class="btn-ghost" data-tip="Adicionar imagem de referência (&lt;image2&gt;)" data-tip-pos="top"><svg class="ic"><use href="#i-image-plus"/></svg><span class="hidden sm:inline">Referência</span></button>
             <button id="toggleLooks" class="btn-ghost" aria-expanded="false" aria-controls="popLooks" aria-haspopup="dialog" data-tip="Presets de edição" data-tip-pos="top"><svg class="ic"><use href="#i-palette"/></svg><span class="hidden sm:inline">Presets</span></button>
+            <button id="addonBtn" class="btn-ghost hidden" aria-expanded="false" aria-controls="popAddons" aria-haspopup="dialog" data-tip="LoRAs adicionais" data-tip-pos="top"><svg class="ic"><use href="#i-layers"/></svg><span class="hidden sm:inline">LoRA</span></button>
             <button id="enhancePrompt" class="btn-ghost" data-tip="Melhorar prompt com IA" data-tip-pos="top" aria-label="Melhorar prompt com IA"><svg class="ic"><use href="#i-wand"/></svg><span class="hidden sm:inline">Melhorar</span></button>
             <span class="flex-1"></span>
+            <span id="counter" class="mr-1 hidden text-[11px] tabular-nums text-faint" aria-live="off"></span>
             <button id="settingsBtn" class="icon-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="pop" data-tip="Ajustes" data-tip-pos="top" aria-label="Ajustes de geração">
               <svg class="ic"><use href="#i-sliders"/></svg>
               <span id="dot" class="absolute right-1.5 top-1.5 hidden h-1.5 w-1.5 rounded-full bg-accent"></span>
@@ -435,6 +508,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Modo Remover fundo (lote) -->
+    <section id="bgView" class="absolute inset-0 z-40 hidden flex-col bg-canvas" aria-label="Remover fundo em lote">
+      <div class="flex flex-wrap items-center gap-2 border-b border-line/[.06] px-5 py-3">
+        <div class="mr-2 min-w-0 shrink-0">
+          <h1 class="text-[15px] font-semibold tracking-[-.012em]">Remover fundo</h1>
+          <p class="max-w-[260px] truncate text-[11px] text-faint" title="BiRefNet (444 MB): só recorta, não gera pixels novos. O original fica no histórico para comparar.">BiRefNet · só recorta, não gera pixels</p>
+        </div>
+        <button id="bgAdd" class="btn-quiet" data-tip="Adicionar fotos" data-keys="mod+O"><svg class="ic"><use href="#i-image-plus"/></svg>Adicionar fotos</button>
+        <button id="bgFolderBtn" class="btn-quiet" data-tip="Adicionar todas as fotos de uma pasta"><svg class="ic"><use href="#i-folder"/></svg>Escolher pasta</button>
+        <span class="flex-1"></span>
+        <span id="bgStatus" class="text-[12px] tabular-nums text-mute" role="status" aria-live="polite"></span>
+        <button id="bgClear" class="btn-ghost" data-tip="Limpar a lista (o histórico é mantido)"><svg class="ic"><use href="#i-trash"/></svg><span class="hidden md:inline">Limpar</span></button>
+        <button id="bgExport" class="btn-quiet"><svg class="ic"><use href="#i-download"/></svg>Exportar</button>
+        <button id="bgRun" class="btn-primary"><svg class="ic" id="bgRunIcon"><use href="#i-scissors"/></svg><span id="bgRunText">Remover fundos</span></button>
+        <input id="bgFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+        <input id="bgFolder" type="file" webkitdirectory multiple hidden>
+      </div>
+      <div class="relative min-h-0 flex-1 overflow-y-auto p-5 scroll-thin">
+        <div id="bgEmpty" class="mx-auto mt-[8vh] flex max-w-[460px] flex-col items-center rounded-[24px] border border-dashed border-line/[.2] px-8 py-12 text-center">
+          <span class="grid h-12 w-12 place-items-center rounded-[14px] bg-accent/15 text-accent"><svg class="ic" style="width:22px;height:22px"><use href="#i-scissors"/></svg></span>
+          <h2 class="mt-4 text-[17px] font-semibold tracking-[-.015em]">Solte fotos ou uma pasta aqui</h2>
+          <p class="mt-1 text-[13px] text-mute">Cada foto vira um PNG com fundo transparente, uma de cada vez, e tudo fica no histórico.</p>
+          <div class="mt-5 flex gap-2"><button id="bgAdd2" class="btn-primary"><svg class="ic"><use href="#i-image-plus"/></svg>Adicionar fotos</button><button id="bgFolderBtn2" class="btn-quiet"><svg class="ic"><use href="#i-folder"/></svg>Escolher pasta</button></div>
+          <p class="mt-4 text-[11px] text-faint">PNG, JPG ou WebP · até 20 MB cada · até 200 por lote</p>
+          <p id="bgNotice" class="mt-3 hidden text-[12px] text-mute"></p>
+        </div>
+        <div id="bgGrid" class="grid gap-4" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))"></div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -456,44 +559,54 @@
   </div>
 </div>
 
+<!-- Preview independente: mantém a edição atual no palco. -->
+<dialog id="historyPreview" aria-labelledby="historyPreviewTitle">
+  <div class="flex h-14 items-center justify-between gap-3 border-b border-line/[.08] px-4">
+    <h2 id="historyPreviewTitle" class="min-w-0 truncate text-[15px] font-semibold">Preview da edição</h2>
+    <button id="historyPreviewClose" class="icon-btn shrink-0" aria-label="Fechar preview"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div id="historyPreviewContent" class="history-preview-body scroll-thin"></div>
+</dialog>
+
 <!-- Configurações avançadas -->
 <div id="adv" class="pop fixed inset-0 z-50" data-open="false">
   <div class="absolute inset-0 bg-black/40 backdrop-blur-[3px]" data-close-adv></div>
-  <div class="pop-panel glass relative mx-auto mt-[6vh] flex max-h-[88vh] w-[min(640px,calc(100vw-32px))] flex-col overflow-hidden rounded-[20px]" style="transform-origin:50% 0;--glass-a:.95" role="dialog" aria-modal="true" aria-labelledby="advTitle">
+  <div class="pop-panel glass relative mx-auto mt-[6vh] flex max-h-[88vh] w-[min(580px,calc(100vw-32px))] flex-col overflow-hidden rounded-[20px]" style="transform-origin:50% 0;--glass-a:.95" role="dialog" aria-modal="true" aria-labelledby="advTitle">
     <header class="flex h-14 shrink-0 items-center justify-between border-b border-line/[.08] pl-5 pr-3">
-      <h2 id="advTitle" class="text-[15px] font-semibold tracking-[-.012em]">Configurações avançadas</h2>
+      <h2 id="advTitle" class="text-[15px] font-semibold tracking-[-.012em]">Ajustes avançados</h2>
       <button id="advClose" class="icon-btn" aria-label="Fechar" data-tip="Fechar" data-keys="Esc"><svg class="ic"><use href="#i-x"/></svg></button>
     </header>
-    <div id="advBody" class="scroll-thin space-y-6 overflow-y-auto px-5 py-5">
+    <div id="advBody" class="scroll-thin space-y-7 overflow-y-auto px-5 pb-6 pt-4">
 
-      <section aria-labelledby="secEngine">
-        <h3 id="secEngine" class="section-title">Motor local</h3>
-        <div class="flex items-center gap-3 rounded-[14px] bg-line/[.05] p-3.5">
+      <section id="secEngine" aria-label="Motor local">
+        <div class="flex min-h-[52px] items-center gap-3 rounded-[14px] bg-line/[.05] py-2 pl-3.5 pr-2">
           <span id="advDot" class="h-2 w-2 shrink-0 rounded-full bg-faint"></span>
-          <p id="advUrlMsg" role="status" aria-live="polite" class="min-w-0 flex-1 text-[13px] leading-snug"></p>
-          <button id="advStart" class="btn-quiet"><svg class="ic"><use href="#i-play"/></svg><span>Preparar motor local</span></button>
+          <div class="min-w-0 flex-1">
+            <p id="advEngTitle" class="truncate text-[13px] font-medium"></p>
+            <p id="advUrlMsg" role="status" aria-live="polite" class="truncate text-[12px] text-mute"></p>
+          </div>
+          <button id="advStart" class="btn-quiet btn-sm"></button>
         </div>
-        <p class="mt-2 px-1 text-[12px] leading-relaxed text-faint">O app prepara e inicia o próprio motor. O primeiro uso baixa dependências e modelos; depois, as edições funcionam sem internet.</p>
       </section>
 
-      <section aria-labelledby="secWf">
-        <div class="mb-2 flex items-center justify-between">
-          <h3 id="secWf" class="section-title !mb-0">Workflow</h3>
-          <button id="wfImport" class="btn-ghost btn-sm"><svg class="ic ic-sm"><use href="#i-upload"/></svg>Importar JSON</button>
+      <section id="secWf" aria-labelledby="secWfT">
+        <div class="mb-2 flex items-center justify-between pr-1">
+          <h3 id="secWfT" class="section-title !mb-0">Workflow</h3>
+          <button id="wfImport" class="btn-ghost btn-sm" data-tip="Workflow do ComfyUI salvo em “Save (API Format)”"><svg class="ic ic-sm"><use href="#i-upload"/></svg>Importar</button>
           <input id="wfFile" type="file" accept="application/json,.json" hidden>
         </div>
-        <div id="wfList" role="radiogroup" aria-labelledby="secWf" class="space-y-2"></div>
-        <p class="mt-2.5 px-1 text-[11px] leading-relaxed text-faint">Importe um workflow exportado do ComfyUI em <b class="font-medium text-mute">Save (API Format)</b>. O app encontra sozinho onde ficam a imagem, o prompt e a semente. Pasta dos seus workflows: <span id="wfDir" class="select-text font-mono"></span></p>
+        <div id="wfList" role="radiogroup" aria-labelledby="secWfT" class="space-y-1.5"></div>
       </section>
 
       <section id="secModels" aria-labelledby="secModelsT" class="hidden">
-        <h3 id="secModelsT" class="section-title">Modelos e memória</h3>
-        <div id="modelOptions" class="space-y-4"></div>
+        <h3 id="secModelsT" class="section-title">Perfil de modelos</h3>
+        <div id="profileList" role="radiogroup" aria-labelledby="secModelsT" class="grid grid-cols-3 gap-2"></div>
+        <div id="profileInfo" class="mt-2.5"></div>
       </section>
 
       <section id="secParams" aria-labelledby="secParamsT" class="hidden">
-        <h3 id="secParamsT" class="section-title">Parâmetros do workflow</h3>
-        <div id="wfParams" class="space-y-4"></div>
+        <h3 id="secParamsT" class="section-title">Geração</h3>
+        <div id="wfParams" class="space-y-4 rounded-[14px] bg-line/[.05] p-3.5"></div>
       </section>
     </div>
   </div>
@@ -547,11 +660,13 @@ const MAX_BYTES = 20 * 1024 * 1024;
 const DEFAULTS = { strength: 60, n: 1, seed: '', negative: '' };
 const LOOKS = [
   { label: 'Dourado', prompt: [
-    'Mantenha a pessoa de <image1> exatamente como ela é (rosto, expressão, pose, anatomia, cabelo, roupas e acessórios) e coloque-a em um novo cenário externo ao pôr do sol dourado. Substitua completamente o fundo, o chão e qualquer fundo de estúdio ou pano branco por um ambiente real ao ar livre, como uma praia, um campo aberto ou uma estrada, com o sol baixo visível perto do horizonte e céu de fim de tarde. O resultado deve ser uma única fotografia realista, não a foto original com filtro amarelo.',
-    'Faça a pessoa ocupar o cenário de forma natural: ajuste escala, posição e perspectiva para que ela tenha proporções corretas em relação ao chão e ao horizonte, com câmera e ponto de vista coerentes entre pessoa e cenário. Os pés devem pisar na superfície, sem flutuar nem parecer um recorte colado.',
-    'Refaça toda a iluminação da pessoa a partir do sol baixo, mantendo uma única direção de luz em toda a imagem. Aplique luz dourada quente nas superfícies voltadas ao sol, contraluz suave no cabelo e nas bordas do corpo e preenchimento do céu nas áreas em sombra, recalculando luz e sombra no rosto, na pele, nos braços, nas roupas e nos sapatos. Elimine a iluminação de estúdio original.',
-    'Acrescente sombras de contato sob os pés e sombras projetadas no chão, longas e suaves, com direção oposta ao sol, além de luz rebatida do ambiente. Harmonize exposição, balanço de branco, contraste, nitidez e textura entre pessoa e fundo, preservando tons de pele naturais e detalhes nas altas luzes (por exemplo, a calça branca sem estourar).'
+    'Mantenha a pessoa de <image1> exatamente como ela é (rosto, expressão, pose, anatomia, cabelo, roupas e acessórios) e coloque-a em um novo cenário externo ao pôr do sol dourado. Substitua completamente o fundo e o chão, inclusive qualquer fundo de estúdio, por um ambiente real ao ar livre, com o sol baixo visível perto do horizonte e céu de fim de tarde. O resultado deve ser uma única fotografia realista, não a foto original com filtro amarelo.',
+    'Faça a pessoa ocupar o cenário de forma natural: ajuste escala, posição e perspectiva para que ela tenha proporções corretas em relação ao chão e ao horizonte, com câmera e ponto de vista coerentes entre pessoa e cenário. Os pés ou pontos de apoio devem tocar a superfície, sem flutuar nem parecer um recorte colado.',
+    'Posicione o sol baixo atrás e de um dos lados da pessoa e refaça toda a iluminação a partir dele, com uma única direção de luz. O contraluz dourado deve desenhar um contorno quente no cabelo e nas bordas do corpo. A frente recebe luz suave e quente rebatida do chão e do céu, mais escura que o contorno, com sombras modeladas no rosto e no corpo. Elimine por completo a iluminação original que contradiga o novo cenário.',
+    'Acrescente sombras de contato sob os pontos de apoio e uma sombra longa e suave no chão, oposta ao sol, além de luz rebatida do solo. Use leve desfoque de profundidade de campo no fundo e brilho suave do sol, sem exagero.',
+    'Acabamento fotográfico natural: preserve a textura real da pele, dos poros e do cabelo, sem aspecto liso, plástico ou de pintura. Evite aparência HDR, saturação exagerada, halos nas bordas e contraste estourado. Mantenha o balanço de branco quente porém crível, grão fino coerente com a foto e detalhes nas altas luzes e nas sombras.'
   ].join('\n\n'), swatch: 'linear-gradient(135deg,#ffb36b,#e8556d)' },
+  { label: 'Sem fundo', prompt: 'Remove the background from <image1> and output a PNG image. This is an RGBA image with transparency. Keep the subject exactly as it is (face, expression, pose, hair, clothes and accessories), with clean, natural edges that preserve fine hair strands, and no halos, no leftover background and no shadow on the ground. Keep every part of the subject fully opaque, including white or light-colored clothing and accessories that resemble the background; only the background becomes transparent. The image has alpha channel and the background is transparent.', swatch: 'conic-gradient(#d4d4d8 25%, #fafafa 0 50%, #d4d4d8 0 75%, #fafafa 0) 0 0 / 14px 14px' },
   { label: 'P&B', prompt: 'Converta esta fotografia em preto e branco com acabamento fotográfico natural. Preserve identidade, expressão, anatomia, roupas, objetos, enquadramento e perspectiva. Construa a imagem pela luminância: separe pele, cabelo, roupas e fundo com gradações de cinza legíveis, mantendo textura e detalhes nas sombras e nas altas luzes. Ajuste contraste local e global com transições suaves, evitando pretos sem detalhe, brancos estourados e halos. Mantenha a direção da luz e a coerência das sombras; não altere o cenário nem acrescente elementos.', swatch: 'linear-gradient(135deg,#f2f2f2,#3a3a3a)' },
   { label: 'Vintage', prompt: 'Reinterprete esta foto com aparência de fotografia analógica vintage, preservando a identidade das pessoas, anatomia, pose, roupas, objetos e composição. Use cores moderadamente dessaturadas, tons quentes discretos, contraste suave e uma curva tonal de filme, mantendo pele natural e detalhes legíveis. Acrescente grão fino coerente com a resolução e uma leve suavidade óptica, sem destruir textura ou nitidez do rosto. Harmonize o tratamento entre pessoa e fundo e preserve a iluminação original. Evite envelhecimento artificial exagerado, manchas, riscos, molduras ou elementos que não foram pedidos.', swatch: 'linear-gradient(135deg,#e6cfa0,#8a6a43)' },
   { label: 'Vibrante', prompt: 'Valorize as cores desta fotografia com um resultado vibrante e realista. Preserve identidade, anatomia, roupas, objetos, cenário, composição e perspectiva. Aumente seletivamente a vivacidade das cores menos saturadas, separando os elementos da cena e mantendo tons de pele naturais. Ajuste exposição, contraste e balanço de branco de forma coerente em toda a foto, preservando textura, detalhes das sombras e altas luzes. Não transforme pele em laranja, não sature cores já intensas e evite halos ou aparência HDR artificial. Não acrescente nem remova elementos.', swatch: 'linear-gradient(135deg,#ff3d9a,#22d3ee)' },
@@ -564,6 +679,8 @@ const save = (k, v) => { try { localStorage.setItem('spe.' + k, JSON.stringify(v
 /* ───────────────────────── estado ───────────────────────── */
 const S = {
   reference: null,
+  mode: 'edit',
+  addons: [],         // ids de LoRAs adicionais desta edição
   versions: [],       // { id, url, blob, w, h, prompt, seed }
   sel: -1,
   name: 'Sem título',
@@ -633,10 +750,10 @@ $('#referenceFile').onchange = async e => {
   } catch (err) { toast({ kind: 'error', text: err.message }); }
 };
 function renderReference() {
-  $('#referenceInfo').classList.toggle('hidden', !S.reference);
+  $('#referenceInfo').classList.toggle('hidden', !S.reference); $('#referenceInfo').classList.toggle('flex', !!S.reference);
   if (S.reference) { $('#referencePreview').src = S.reference.url; $('#referencePreview').title = S.reference.name; }
   else $('#referencePreview').removeAttribute('src');
-  syncPrompt();
+  renderAddons(); syncPrompt();
 }
 function removeReference() {
   if (!S.reference) return;
@@ -645,6 +762,47 @@ function removeReference() {
   setTimeout(() => URL.revokeObjectURL(gone.url), 9000);
 }
 $('#removeReference').onclick = removeReference;
+
+/* LoRAs adicionais (complementos): um botão descritivo aplica o prompt e liga a LoRA nesta edição. */
+const addonSpecs = () => (R.remote ? activeWf()?.model_options?.addons : null) || [];
+const addonChars = () => S.addons.reduce((n, id) => n + Array.from(addonSpecs().find(a => a.id === id)?.prompt || '').length, 0);
+function renderAddons() {
+  const specs = addonSpecs();
+  S.addons = S.addons.filter(id => specs.some(a => a.id === id));
+  $('#addonBtn').classList.toggle('hidden', !specs.length);
+  $('#addonBtn').classList.toggle('text-ink', !!S.addons.length);
+  $('#addons').innerHTML = specs.map(a => `<button data-addon="${esc(a.id)}" aria-pressed="${S.addons.includes(a.id)}" class="flex w-full items-start gap-3 rounded-[14px] bg-line/[.05] p-3 text-left transition-transform duration-150 hover:bg-line/[.08] active:scale-[.99] aria-pressed:bg-line/[.08] aria-pressed:shadow-[0_0_0_1.5px_rgb(var(--accent)/.7)]">
+      <span class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-accent/15 text-accent">${icon('layers')}</span>
+      <span class="min-w-0 flex-1"><span class="flex flex-wrap items-center gap-x-2 gap-y-1"><span class="text-[13px] font-semibold">${esc(a.label)}</span><span class="chip bg-line/[.07] text-mute">LoRA · ${esc(modelBytes(a.size_bytes))}</span><span class="chip bg-line/[.07] text-mute">+${Array.from(a.prompt).length} caracteres</span></span>
+        <span class="mt-1 block text-[12px] leading-snug text-mute">${esc(a.description)}</span>
+        <span class="mt-1 block text-[11px] text-faint">Experimental · LoRA de terceiros, baixada na primeira vez e aplicada só nesta edição.</span></span></button>`).join('');
+  $('#addonChips').innerHTML = S.addons.map(id => { const a = specs.find(x => x.id === id);
+    return `<span class="inline-flex h-9 items-center gap-1 rounded-[11px] bg-accent/12 pl-2.5 pr-1 text-[12px] font-medium" data-tip="LoRA adicional nesta edição (${esc(modelBytes(a.size_bytes))}, baixada na primeira vez). O texto de apoio dela vai junto, sem aparecer no prompt." data-tip-pos="top">${icon('layers', 'ic-sm text-accent')}<span>LoRA · ${esc(a.label)}</span><span class="tabular-nums text-mute">+${Array.from(a.prompt).length} car.</span><button data-addon-off="${esc(id)}" class="icon-btn icon-btn-sm !h-6 !w-6" aria-label="Remover LoRA ${esc(a.label)}">${icon('x', 'ic-sm')}</button></span>`; }).join('');
+  $('#attachRow').classList.toggle('hidden', !S.reference && !S.addons.length); $('#attachRow').classList.toggle('flex', !!S.reference || !!S.addons.length);
+  if (typeof promptEl !== 'undefined') syncCounter();
+}
+const promptLimit = () => R.status?.limits?.prompt_chars || 10000;
+const effectivePromptText = () => [...S.addons.map(id => addonSpecs().find(a => a.id === id)?.prompt?.trim() || '').filter(Boolean), promptEl.value.trim()].filter(Boolean).join(' ');
+const promptTooLong = () => Array.from(effectivePromptText()).length > promptLimit();
+function syncCounter() {
+  const total = Array.from(effectivePromptText()).length, extra = addonChars(), c = $('#counter'), limit = promptLimit(), over = total > limit;
+  c.classList.toggle('hidden', !total);
+  c.textContent = `${total.toLocaleString('pt-BR')} / ${limit.toLocaleString('pt-BR')}${extra ? ` (+${extra.toLocaleString('pt-BR')} LoRA)` : ''}`;
+  c.title = 'Caracteres do prompt efetivo, incluindo o apoio das LoRAs.';
+  c.style.color = over ? 'rgb(var(--danger))' : '';
+  promptEl.setAttribute('aria-invalid', String(over));
+  $('#promptLimitMessage').classList.toggle('hidden', !over);
+  $('#promptLimitMessage').textContent = over ? `O prompt excede ${limit.toLocaleString('pt-BR')} caracteres${extra ? ', incluindo o apoio das LoRAs' : ''}. Reduza o texto para gerar ou aprimorar. Seu texto foi mantido inteiro.` : '';
+}
+
+function toggleAddon(id) {
+  const a = addonSpecs().find(x => x.id === id); if (!a) return;
+  const was = S.addons.includes(id), previous = S.addons.slice();
+  S.addons = was ? S.addons.filter(x => x !== id) : [...S.addons, id]; renderAddons(); syncPrompt();
+  if (!was) { closePops(); promptEl.focus(); toast({ text: `LoRA ${a.label} ligada nesta edição`, action: { label: 'Desfazer', icon: 'undo', run: () => { S.addons = previous; renderAddons(); syncPrompt(); } } }); }
+}
+$('#addons').addEventListener('click', e => { const b = e.target.closest('[data-addon]'); if (b) toggleAddon(b.dataset.addon); });
+$('#addonChips').addEventListener('click', e => { const b = e.target.closest('[data-addon-off]'); if (b) { S.addons = S.addons.filter(id => id !== b.dataset.addonOff); renderAddons(); syncPrompt(); promptEl.focus(); } });
 /* Insere a tag <image2> onde está o cursor, sem impor função à referência. */
 $('#referenceTag').onclick = () => {
   const el = promptEl, tag = '<image2>', a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a;
@@ -664,6 +822,7 @@ async function pollPromptAI() {
   } catch (err) { promptAI.busy = false; syncPrompt(); toast({ kind: 'error', text: err.message }); }
 }
 $('#enhancePrompt').onclick = async () => {
+  if (promptTooLong()) { syncPrompt(); promptEl.focus(); return; }
   if (promptAI.busy || !promptEl.value.trim()) return;
   promptAI.busy = true; promptAI.job = null; $('#promptAiStatus').textContent = 'Preparando a IA de texto…'; syncPrompt(); $('#promptSuggestion').classList.add('hidden');
   try {
@@ -904,12 +1063,14 @@ function imageSize(blob) {
 const remoteEngine = {
   name: 'ComfyUI',
   real: true,
-  async edit({ src, prompt, negative, strength, seed, n, reference, onProgress, signal }) {
+  async edit({ src, prompt, negative, strength, seed, n, reference, addons, mode, name, onProgress, signal }) {
     const fd = new FormData();
     fd.append('image', src.blob, 'image');
     if (reference) fd.append('reference', reference.blob, reference.name);
-    const opts = { prompt, negative, n, seed: String(seed), name: S.name, source_result: src.resultId || null };
-    if (supports('strength')) opts.strength = strength;
+    const opts = { prompt, negative, n, seed: String(seed), name: name ?? S.name, source_result: src.resultId || null };
+    if (mode) opts.mode = mode;
+    if (!mode && supports('strength')) opts.strength = strength;
+    if (addons?.length) opts.addons = addons;
     fd.append('options', new Blob([JSON.stringify(opts)], { type: 'application/json' }));
     let res;
     try { res = await fetch('/api/edit', { method: 'POST', body: fd, signal }); }
@@ -945,7 +1106,8 @@ const promptEl = $('#prompt');
 async function generate() {
   if (S.busy || promptAI.busy || !hasImg()) return;
   const prompt = promptEl.value.trim();
-  if (!prompt) { nudge(); return; }
+  if (!prompt && !S.addons.length) { nudge(); return; }
+  if (promptTooLong()) { syncPrompt(); promptEl.focus(); return; }
   closePopover();
   const st = { ...S.settings }, base = cur();
   const seed = st.seed !== '' ? Number(st.seed) : Math.floor(Math.random() * 1e8);
@@ -953,14 +1115,14 @@ async function generate() {
   S.busy = { n: st.n, p: 0, ctrl, started: performance.now() };
   renderBusy();
   try {
-    const res = await engine.edit({ src: base, prompt, negative: st.negative, strength: st.strength / 100, seed, n: st.n, reference: S.reference, signal: ctrl.signal, onProgress: (p, phase) => { if (S.busy) { S.busy.p = p; S.busy.phase = phase; paintProgress(); } } });
+    const res = await engine.edit({ src: base, prompt, negative: st.negative, strength: st.strength / 100, seed, n: st.n, reference: S.reference, addons: S.addons.slice(), signal: ctrl.signal, onProgress: (p, phase) => { if (S.busy) { S.busy.p = p; S.busy.phase = phase; paintProgress(); } } });
     const add = res.map(r => ({ id: uid(), url: URL.createObjectURL(r.blob), blob: r.blob, w: r.w, h: r.h, prompt: r.metadata?.prompt ?? prompt, seed: r.seed, metadata: r.metadata, resultId: r.resultId, kind: 'edit' }));
     const elapsed = (performance.now() - S.busy.started) / 1000;
     S.busy = null;
     const at = S.versions.length, prevSel = S.sel;
     perform({ redo: () => { S.versions.push(...add); S.sel = at; }, undo: () => { S.versions.splice(at, add.length); S.sel = Math.min(prevSel, S.versions.length - 1); } });
     S.prompts.unshift(prompt); S.promptIdx = -1; S.lastSeed = res[0]?.seed ?? seed;
-    promptEl.value = ''; syncPrompt();
+    promptEl.value = ''; S.addons = []; renderAddons(); syncPrompt();
     if (!$('#historyPanel').hidden) loadHistory(true);
     toast({ kind: 'success', text: `${add.length === 1 ? 'Edição pronta' : `${add.length} variações prontas`} · ${formatDuration(elapsed)} no total`, action: { label: 'Desfazer', icon: 'undo', run: undo } });
   } catch (err) {
@@ -1051,7 +1213,7 @@ $('#railList').addEventListener('click', e => {
 function renderChrome() {
   const has = hasImg();
   $('#titleWrap').classList.toggle('invisible', !has);
-  const dock = $('#promptDock'); dock.classList.toggle('hidden', !has); dock.classList.toggle('flex', has);
+  const dock = $('#promptDock'), showDock = has && S.mode === 'edit'; dock.classList.toggle('hidden', !showDock); dock.classList.toggle('flex', showDock);
   if (!has) closePops();
   const nameEl = $('#name'); if (document.activeElement !== nameEl) nameEl.value = S.name; sizeName();
   const v = cur();
@@ -1099,19 +1261,21 @@ function syncPrompt() {
   el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px';
   const g = $('#genBtn'), busy = !!S.busy;
   const refUnsupported = !!S.reference && !supports('reference');
-  const state = busy ? 'busy' : (!has || empty || promptAI.busy || refUnsupported) ? 'disabled' : 'idle';
+  const state = busy ? 'busy' : (!has || (empty && !S.addons.length) || promptAI.busy || refUnsupported || promptTooLong()) ? 'disabled' : 'idle';
   g.dataset.state = state; g.setAttribute('aria-disabled', String(state === 'disabled'));
   g.className = (busy ? 'btn-quiet' : 'btn-primary') + ' ml-1 !h-9 !rounded-[12px] !px-4' + (state === 'disabled' ? ' !opacity-35 !cursor-not-allowed' : '');
   $('#genIcon').innerHTML = `<use href="#i-${busy ? 'square' : 'sparkles'}"/>`;
   $('#genText').textContent = busy ? 'Parar' : 'Gerar';
-  g.dataset.tip = busy ? 'Cancelar geração' : promptAI.busy ? 'Espere o aprimoramento do prompt' : refUnsupported ? 'Este workflow não aceita referência' : !has ? 'Abra uma imagem primeiro' : empty ? 'Descreva a edição para gerar' : 'Gerar edição';
+  g.dataset.tip = busy ? 'Cancelar geração' : promptTooLong() ? 'Reduza o prompt para até 10.000 caracteres' : promptAI.busy ? 'Espere o aprimoramento do prompt' : refUnsupported ? 'Este workflow não aceita referência' : !has ? 'Abra uma imagem primeiro' : (empty && !S.addons.length) ? 'Descreva a edição para gerar' : 'Gerar edição';
+  syncCounter();
   g.dataset.keys = busy ? 'Esc' : state === 'idle' ? 'Enter' : '';
   g.setAttribute('aria-label', g.dataset.tip);
-  $('#looks').inert = busy || promptAI.busy;
+  $('#looks').inert = $('#addons').inert = busy || promptAI.busy;
+  $$('#addonChips button').forEach(b => { b.disabled = busy || promptAI.busy; });
   $$('#looks [data-look]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.look === el.value.trim())));
   $('#clearPrompt').classList.toggle('invisible', !len); $('#clearPrompt').disabled = !len;
   const enhance = $('#enhancePrompt');
-  enhance.disabled = empty || busy || promptAI.busy || !R.remote;
+  enhance.disabled = empty || busy || promptAI.busy || !R.remote || promptTooLong();
   enhance.dataset.tip = !R.remote ? 'Melhorar com IA: disponível no app local' : empty ? 'Escreva uma ideia para melhorá-la com IA' : 'Melhorar o texto com IA na CPU. Não analisa a foto; o primeiro uso baixa ~1,2 GB.';
   $('#aiRun').classList.toggle('hidden', !promptAI.busy);
   $('#cancelEnhance').disabled = !promptAI.job;
@@ -1130,7 +1294,7 @@ function renderLooks() {
 }
 $('#looks').addEventListener('click', e => { const b = e.target.closest('[data-look]'); if (b) { closePops(); setPrompt(b.dataset.look); } });
 function setPrompt(t) { promptEl.value = t; syncPrompt(); promptEl.focus(); promptEl.setSelectionRange(t.length, t.length); }
-function renderAll() { renderStage(); renderRail(); renderChrome(); renderBusy(); renderLooks(); }
+function renderAll() { renderStage(); renderRail(); renderChrome(); renderBusy(); renderLooks(); renderAddons(); }
 
 /* Estado vazio: cartas inclinadas geradas com o próprio motor de looks */
 function renderHero() {
@@ -1157,7 +1321,7 @@ $('#genBtn').addEventListener('click', () => { if (S.busy) cancelBusy(); else ge
 
 /* ───────────────────────── popovers do compositor ───────────────────────── */
 /* Um por vez: prompt completo, presets e ajustes. Esc ou clique fora fecha. */
-const POPS = { popFull: '#versionPromptBtn', popLooks: '#toggleLooks', pop: '#settingsBtn' };
+const POPS = { popFull: '#versionPromptBtn', popLooks: '#toggleLooks', popAddons: '#addonBtn', pop: '#settingsBtn' };
 const pop = $('#pop'), settingsBtn = $('#settingsBtn');
 const popOpen = name => name ? $('#' + name).dataset.open === 'true' : Object.keys(POPS).some(n => $('#' + n).dataset.open === 'true');
 function openPop(name) {
@@ -1177,6 +1341,7 @@ const closePopover = closePops;
 const togglePop = name => popOpen(name) ? closePops(true) : openPop(name);
 settingsBtn.onclick = () => togglePop('pop');
 $('#toggleLooks').onclick = () => togglePop('popLooks');
+$('#addonBtn').onclick = () => togglePop('popAddons');
 $('#versionPromptBtn').onclick = () => togglePop('popFull');
 document.addEventListener('pointerdown', e => {
   if (!popOpen()) return;
@@ -1233,8 +1398,10 @@ nameEl.addEventListener('blur', () => { const v = nameEl.value.replace(/[\\/:*?"
 
 /* Histórico persistente e prompt associado à versão selecionada. */
 let historyItems = [], historyOffset = 0, historyLoading = false;
-function reusePrompt(prompt) { promptEl.value = prompt; syncPrompt(); promptEl.focus(); }
-$('#reuseVersionPrompt').onclick = () => { if (cur()?.kind === 'edit') reusePrompt(cur().prompt || ''); };
+/* Com LoRA adicional, o prompt enviado inclui o texto de apoio; reutilizar devolve só o que o usuário escreveu. */
+const userPromptOf = (m, fallback) => (m?.addons?.length && typeof m.user_prompt === 'string') ? m.user_prompt : (fallback || '');
+function reusePrompt(prompt, addons = []) { promptEl.value = prompt; S.addons = addons.filter(id => addonSpecs().some(a => a.id === id)); renderAddons(); syncPrompt(); promptEl.focus(); }
+$('#reuseVersionPrompt').onclick = () => { if (cur()?.kind === 'edit') reusePrompt(userPromptOf(cur().metadata, cur().prompt), (cur().metadata?.addons || []).map(a => a.id)); };
 function closeHistory() { $('#historyPanel').hidden = true; document.body.dataset.history = 'false'; $('#historyBtn').setAttribute('aria-expanded', 'false'); $('#historyBtn').focus(); }
 async function openHistory() { $('#historyPanel').hidden = false; document.body.dataset.history = 'true'; $('#historyBtn').setAttribute('aria-expanded', 'true'); $('#historyClose').focus(); await loadHistory(true); }
 $('#historyBtn').onclick = () => $('#historyPanel').hidden ? openHistory() : closeHistory();
@@ -1248,13 +1415,18 @@ function renderHistory() {
       <div class="flex items-start gap-3">
         <button data-history-open="${esc(item.id)}" class="shrink-0 rounded-[10px] transition-transform duration-150 active:scale-95" aria-label="Abrir ${esc(item.name || 'edição')}" data-tip="Abrir imagem" data-tip-pos="top"><img src="${esc(item.thumbnail_url)}" loading="lazy" alt="" width="72" height="72" class="h-[72px] w-[72px] rounded-[10px] object-cover" style="box-shadow:0 0 0 .5px rgb(var(--line) / .2)"></button>
         <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2"><h3 class="min-w-0 truncate text-[13px] font-semibold">${esc(item.name || 'Sem título')}</h3>
+          <div class="flex items-start justify-between gap-2"><h3 class="min-w-0 truncate text-[13px] font-semibold">${esc(item.name || 'Sem título')}${item.mode === 'remove_background' ? ' <span class="chip ml-1 bg-line/[.07] align-middle text-mute">Sem fundo</span>' : ''}</h3>
             <span class="-mr-1 -mt-1 flex shrink-0 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
+              ${item.original_url ? `<button data-history-compare="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Comparar com o original" data-tip="Comparar com o original">${icon('split', 'ic-sm')}</button>` : ''}
               <button data-history-prompt="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Reutilizar prompt" data-tip="Reutilizar prompt" ${item.prompt ? '' : 'disabled'}>${icon('corner-up-left', 'ic-sm')}</button>
               <button data-history-delete="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Excluir ${esc(item.name || 'edição')} do histórico" data-tip="Excluir do histórico">${icon('trash', 'ic-sm')}</button></span></div>
           <p class="mt-0.5 text-[11px] leading-snug tabular-nums text-faint">${esc(meta)}</p>
           <p class="mt-1.5 line-clamp-3 select-text break-words text-[12px] leading-relaxed text-mute" title="${esc(item.prompt || '')}">${esc(item.prompt || 'Prompt não registrado nesta imagem.')}</p>
-        </div></div></article>`;
+        </div></div>
+      <div class="mt-2 flex items-center gap-2">
+        <button data-history-preview="${esc(item.id)}" class="btn-quiet btn-sm" aria-haspopup="dialog">${icon('split', 'ic-sm')}Preview</button>
+        <span class="min-w-0 truncate text-[11px] text-mute">${esc(item.workflow?.name || item.workflow?.id || 'Workflow não registrado')}</span>
+      </div></article>`;
   }).join('');
 }
 async function loadHistory(reset) {
@@ -1271,11 +1443,46 @@ async function loadHistory(reset) {
   } catch (e) { $('#historyMessage').hidden = false; $('#historyMessage').textContent = e.message; $('#historyMore').hidden = false; $('#historyMore').textContent = 'Tentar novamente'; }
   finally { historyLoading = false; $('#historyMore').disabled = false; }
 }
+function showHistoryPreview(item) {
+  const dialog = $('#historyPreview');
+  const row = (label, value) => value == null || value === '' ? '' : `<div><dt>${esc(label)}</dt><dd>${esc(String(value))}</dd></div>`;
+  const roles = { image: 'Modelo de imagem', text_encoder: 'Codificador da foto e do texto', vae: 'VAE', vision: 'Projetor visual', turbo_lora: 'LoRA Turbo', addon: 'LoRA adicional' };
+  const models = (item.models || []).map(m => `<li class="mt-3"><p class="font-medium">${esc(roles[m.role] || m.folder || 'Modelo')}${m.label ? ` · ${esc(m.label)}` : ''}</p><p class="mt-1 break-words text-mute">${esc(m.filename || 'Arquivo não registrado')}</p>${m.sha256 ? `<details class="mt-1 text-mute"><summary class="cursor-pointer">SHA-256</summary><code class="block break-all select-text text-[11px]">${esc(m.sha256)}</code></details>` : ''}</li>`).join('');
+  const device = { cpu: 'CPU / RAM', default: 'Automático' }, memory = { low: 'Pouca VRAM', auto: 'Automática' };
+  const params = Object.entries(item.params || {}).map(([key, value]) => `${key}: ${value}`).join(' · ');
+  $('#historyPreviewTitle').textContent = item.name || 'Preview da edição';
+  $('#historyPreviewContent').innerHTML = `<div class="history-preview-pair">
+    <figure><figcaption>Antes · imagem enviada</figcaption>${item.original_url ? `<img class="checker" src="${esc(item.original_url)}" alt="Imagem antes da edição">` : '<p class="text-[12px] text-mute">O original não foi guardado nesta edição antiga.</p>'}</figure>
+    <figure><figcaption>Depois · resultado</figcaption><img class="checker" src="${esc(item.url)}" alt="Imagem depois da edição"></figure>
+  </div>
+  <dl class="history-preview-facts">
+    ${row('Data', item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : 'Não registrada')}
+    ${row('Execução do workflow e obtenção do resultado', Number.isFinite(item.duration_seconds) ? formatDuration(item.duration_seconds) : 'Tempo não registrado')}
+    ${row('Workflow', item.workflow?.name || item.workflow?.id || 'Não registrado')}
+    ${row('Resolução do resultado', item.width && item.height ? `${item.width} × ${item.height}` : 'Não registrada')}
+    ${row('Semente', item.seed)}${row('Variação', item.variation ? `${item.variation} de ${item.variations || 1}` : null)}
+    ${row('Codificador executado em', device[item.model_choices?.text_device])}${row('Memória da GPU', memory[item.model_choices?.memory])}
+    ${row('Parâmetros', params)}${row('Intensidade', item.strength)}${row('Referência <image2>', item.reference?.filename)}
+    ${row('Complementos', (item.addons || []).map(a => a.id).join(', '))}
+    ${row('Prompt negativo', item.negative)}
+  </dl>
+  <section class="mt-5 border-t border-line/[.08] pt-4 text-[12px] leading-relaxed"><h3 class="font-semibold">Modelos usados</h3>${models ? `<ul class="select-text">${models}</ul>` : '<p class="mt-2 text-mute">Os modelos não foram registrados nesta edição antiga.</p>'}</section>
+  <section class="mt-5 border-t border-line/[.08] pt-4 text-[12px] leading-relaxed"><h3 class="font-semibold">Prompt enviado ao workflow</h3><p class="mt-2 select-text whitespace-pre-wrap break-words">${esc(item.prompt || 'Prompt não registrado.')}</p></section>`;
+  $('#historyPreviewContent').scrollTop = 0;
+  $$('#historyPreviewContent img').forEach(img => img.addEventListener('error', () => {
+    const message = document.createElement('p'); message.className = 'text-[12px] text-danger'; message.textContent = 'Não foi possível carregar esta imagem.'; img.replaceWith(message);
+  }, { once: true }));
+  dialog.showModal();
+}
+$('#historyPreviewClose').onclick = () => $('#historyPreview').close();
+$('#historyPreview').addEventListener('keydown', e => e.stopPropagation());
+
 $('#historyList').addEventListener('click', async e => {
-  const button = e.target.closest('[data-history-open], [data-history-prompt], [data-history-delete]'); if (!button) return;
-  const id = button.dataset.historyOpen || button.dataset.historyPrompt || button.dataset.historyDelete;
+  const button = e.target.closest('[data-history-open], [data-history-prompt], [data-history-delete], [data-history-compare], [data-history-preview]'); if (!button) return;
+  const id = button.dataset.historyOpen || button.dataset.historyPrompt || button.dataset.historyDelete || button.dataset.historyCompare || button.dataset.historyPreview;
   const item = historyItems.find(x => x.id === id); if (!item) return;
-  if (button.dataset.historyPrompt) { closeHistory(); reusePrompt(item.prompt); return; }
+  if (button.dataset.historyPreview) { showHistoryPreview(item); return; }
+  if (button.dataset.historyPrompt) { closeHistory(); reusePrompt(userPromptOf(item, item.prompt), (item.addons || []).map(a => a.id)); return; }
   button.disabled = true;
   try {
     if (button.dataset.historyDelete) {
@@ -1285,7 +1492,12 @@ $('#historyList').addEventListener('click', async e => {
     if (S.busy) throw new Error('Espere a edição terminar para abrir outra imagem.');
     const response = await fetch(item.url);
     if (!response.ok) throw new Error('Esta imagem não está mais no histórico.');
-    const blob = await response.blob(), size = await imageSize(blob);
+    const blob = await response.blob();
+    if (item.original_url) {  // a edição guardou o original: abre o par, pronto para comparar
+      const orig = await fetch(item.original_url);
+      if (orig.ok) { await openCompare(await orig.blob(), blob, item.name, item); S.split = !!button.dataset.historyCompare; S.lastSeed = item.seed; promptEl.value = ''; renderStage(); renderChrome(); syncPrompt(); closeHistory(); toast({ text: button.dataset.historyCompare ? 'Comparando com o original.' : 'Edição aberta do histórico.' }); return; }
+    }
+    const size = await imageSize(blob);
     const version = {id:uid(), url:URL.createObjectURL(blob), blob, w:size.w, h:size.h, prompt:item.prompt, seed:item.seed, metadata:item, resultId:item.id, kind:'edit'};
     const previous = snapshot(), next = {versions:[version], sel:0, name:item.name || 'Sem título'};
     perform({redo:()=>restore(next), undo:()=>restore(previous)});
@@ -1328,8 +1540,14 @@ function paintView() {
   const w = paneEls[0].clientWidth, h = paneEls[0].clientHeight;
   V.s = Math.max(1, Math.min(V.s, Math.max(1, 8 / (fitScale() || 1))));
   V.x = Math.min(0, Math.max(w * (1 - V.s), V.x)); V.y = Math.min(0, Math.max(h * (1 - V.s), V.y));
-  const t = `translate(${V.x.toFixed(1)}px, ${V.y.toFixed(1)}px) scale(${V.s.toFixed(4)})`;
-  paneEls.forEach(p => { p.querySelector('img').style.transform = t; });
+  // Dimensiona a imagem no zoom final: evita ampliar a textura reduzida do painel,
+  // especialmente no PNG com alfa, que o navegador pode compor em outra camada.
+  const t = `translate(${V.x.toFixed(1)}px, ${V.y.toFixed(1)}px)`;
+  paneEls.forEach(p => {
+    const img = p.querySelector('img');
+    img.style.width = `${w * V.s}px`; img.style.height = `${h * V.s}px`;
+    img.style.transform = t;
+  });
   $('#zPct').textContent = Math.round(fitScale() * V.s * 100) + '%';
   $('#zOut').disabled = V.s <= 1.001; $('#zFit').disabled = V.s <= 1.001 && !V.x && !V.y;
 }
@@ -1357,6 +1575,8 @@ function paintSplit() {
   h.setAttribute('aria-valuenow', Math.round(p)); h.setAttribute('aria-valuetext', `${Math.round(p)}% mostrando o antes`);
   $('#lblBefore').style.opacity = p < 14 ? 0 : 1; $('#lblAfter').style.opacity = p > 86 ? 0 : 1;
   const l = cur() && layers.get(cur().id); if (l) l.el.style.clipPath = splitOn() ? `inset(0 0 0 ${p}%)` : '';
+  /* O original também é recortado: um resultado com transparência não pode deixá-lo aparecer por baixo. */
+  const l0 = S.versions[0] && layers.get(S.versions[0].id); if (l0 && l0 !== l) l0.el.style.clipPath = splitOn() ? `inset(0 ${100 - p}% 0 0)` : '';
 }
 function setSplit(p) { S.splitPos = Math.max(0, Math.min(100, p)); paintSplit(); }
 const splitUI = $('#splitUI');
@@ -1388,6 +1608,8 @@ let palItems = [], palActive = 0, palReturn = null;
 const commands = () => {
   const has = hasImg();
   return [
+    { g: 'Modo', label: S.mode === 'bg' ? 'Voltar para Editar' : 'Remover fundo de várias fotos', icon: S.mode === 'bg' ? 'wand' : 'scissors', keys: S.mode === 'bg' ? 'alt+1' : 'alt+2', run: () => setMode(S.mode === 'bg' ? 'edit' : 'bg') },
+    ...(S.mode === 'bg' ? [{ g: 'Remover fundo', label: 'Adicionar fotos…', icon: 'image-plus', keys: 'mod+O', run: bgPick }, { g: 'Remover fundo', label: 'Adicionar pasta…', icon: 'folder', run: bgPickFolder }] : []),
     { g: 'Arquivo', label: 'Abrir imagem…', icon: 'image-plus', keys: 'mod+O', run: pickFile },
     { g: 'Arquivo', label: 'Usar imagem de exemplo', icon: 'image', run: loadSample },
     { g: 'Arquivo', label: 'Histórico de edições', icon: 'history', run: openHistory },
@@ -1401,6 +1623,7 @@ const commands = () => {
     { g: 'Edição', label: 'Ajustes de geração', icon: 'sliders', run: () => setTimeout(() => openPop('pop'), 30), keep: true, on: has },
     { g: 'Edição', label: 'Adicionar imagem de referência…', icon: 'image-plus', run: () => $('#referenceBtn').click(), on: has && !$('#referenceBtn').disabled },
     { g: 'Edição', label: 'Presets de edição', icon: 'palette', run: () => setTimeout(() => openPop('popLooks'), 30), keep: true, on: has },
+    ...(has ? addonSpecs().map(a => ({ g: 'Edição', label: `LoRA: ${a.label}`, icon: 'wand', run: () => toggleAddon(a.id), keep: true })) : []),
     ...(has ? LOOKS.map(l => ({ g: 'Presets', label: `Aplicar preset: ${l.label}`, icon: 'palette', run: () => setPrompt(l.prompt), keep: true })) : []),
     { g: 'Configurações', label: 'Configurações avançadas…', icon: 'settings', keys: 'mod+,', run: () => openAdv(), keep: true },
     ...(R.remote ? R.workflows.filter(w => !w.active).map(w => ({ g: 'Configurações', label: `Usar workflow: ${w.name}`, icon: 'sparkles', run: () => selectWorkflow(w.id) })) : []),
@@ -1455,6 +1678,12 @@ addEventListener('keydown', e => {
   if (mod && k === ',') { e.preventDefault(); advOpen() ? closeAdv() : openAdv(); return; }
   if (mod && k === 'k' && !advOpen()) { e.preventDefault(); palOpen() ? closePalette() : openPalette(); return; }
   if (palOpen() || advOpen()) return;
+  if (e.altKey && (e.key === '1' || e.key === '2' || e.code === 'Digit1' || e.code === 'Digit2')) { e.preventDefault(); setMode(e.code === 'Digit2' || e.key === '2' ? 'bg' : 'edit'); return; }
+  if (S.mode === 'bg') {
+    if (mod && k === 'o') { e.preventDefault(); bgPick(); }
+    else if (e.key === 'Escape' && BG.running) { e.preventDefault(); runBatch(); }
+    return;
+  }
   if (mod && k === 'o') { e.preventDefault(); pickFile(); return; }
   if (mod && k === 's') { e.preventDefault(); exportImage(); return; }
   if (mod && e.shiftKey && k === 'c') { e.preventDefault(); copyImage(); return; }
@@ -1474,13 +1703,13 @@ addEventListener('keydown', e => {
 });
 
 /* colar, arrastar */
-addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])].find(isImageFile); if (f) { e.preventDefault(); openFiles([f]); } });
+addEventListener('paste', e => { const fs = [...(e.clipboardData?.files || [])].filter(isImageFile); if (!fs.length) return; e.preventDefault(); if (S.mode === 'bg') addBatchFiles(fs); else openFiles([fs[0]]); });
 let dragDepth = 0;
 const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
-addEventListener('dragenter', e => { if (!hasFiles(e)) return; dragDepth++; $('#dropText').textContent = hasImg() ? 'Solte para substituir a imagem' : 'Solte para abrir'; document.body.dataset.drag = 'true'; });
+addEventListener('dragenter', e => { if (!hasFiles(e)) return; dragDepth++; $('#dropText').textContent = S.mode === 'bg' ? 'Solte fotos ou uma pasta para remover o fundo' : hasImg() ? 'Solte para substituir a imagem' : 'Solte para abrir'; document.body.dataset.drag = 'true'; });
 addEventListener('dragleave', e => { if (!hasFiles(e)) return; if (--dragDepth <= 0) { dragDepth = 0; document.body.dataset.drag = 'false'; } });
 addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
-addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.dataset.drag = 'false'; openFiles(e.dataTransfer.files); });
+addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; document.body.dataset.drag = 'false'; if (S.mode === 'bg') filesFromDrop(e.dataTransfer).then(addBatchFiles).catch(() => toast({ kind: 'error', text: 'Não consegui ler essa pasta.' })); else openFiles(e.dataTransfer.files); });
 
 /* ───────────────────────── configurações avançadas (ComfyUI e workflows) ───────────────────────── */
 const adv = $('#adv');
@@ -1493,12 +1722,18 @@ async function loadWorkflows() {
   const d = await api('/api/workflows');
   Object.assign(R, { workflows: d.workflows, active: d.active, values: d.values || {}, errors: d.errors || {}, userDir: d.user_dir });
 }
+const preparing = () => R.status?.comfy?.launcher === 'preparing';
+let fastPoll;
 async function refreshStatus() {
   if (!R.remote) return;
-  const wasOnline = R.status?.comfy?.online;
+  const wasOnline = R.status?.comfy?.online, wasPreparing = preparing();
   try { R.status = await api('/api/status'); } catch { R.status = null; }
   if (!wasOnline && R.status?.comfy?.online) refreshChecks();
+  // Ao terminar (ou cancelar) um preparo, o que já está no disco mudou.
+  if (wasPreparing && !preparing()) { try { await loadWorkflows(); } catch {} }
   renderEngine(); if (advOpen()) { renderAdvStatus(); renderModelOptions(); }
+  clearTimeout(fastPoll);
+  if (advOpen() && preparing()) fastPoll = setTimeout(refreshStatus, 1000);
 }
 async function refreshChecks(ids = R.workflows.map(w => w.id)) {
   ids.forEach(id => { delete R.checks[id]; }); if (advOpen()) renderWfList();
@@ -1534,107 +1769,140 @@ function applySupports() {
     el.disabled = !ok; el.closest('.space-y-4 > div').classList.toggle('hidden', !ok);
   });
   $('#popWf').textContent = R.remote ? (activeWf()?.name ?? 'ComfyUI') : 'Modo demonstração';
-  syncPrompt();
+  renderAddons(); syncPrompt();
 }
 
 const chipCls = 'chip';
 function wfChip(w) {
   if (!R.remote) return '';
   const ck = R.checks[w.id];
-  if (!ck) return `<span class="${chipCls} bg-line/[.07] text-mute">Verificando…</span>`;
-  if (!ck.online) return '';
-  if (ck.ok) return `<span class="${chipCls} bg-ok/15 text-ok">${icon('check', 'ic-sm')}Pronto</span>`;
+  if (!ck) return `<span class="${chipCls} text-faint">${icon('loader', 'ic-sm spin')}<span class="sr-only">Verificando</span></span>`;
+  if (!ck.online || ck.ok) return '';
   return `<span class="${chipCls} bg-accent/15 text-accent">${ck.issues.length} pendência${ck.issues.length > 1 ? 's' : ''}</span>`;
 }
 function renderWfList() {
   const list = $('#wfList'), focused = document.activeElement?.dataset?.wf;
   list.innerHTML = R.workflows.map(w => {
-    const ck = R.checks[w.id], issues = w.active && ck && ck.online && !ck.ok ? ck.issues : [];
-    return `<div class="relative">
-      <button role="radio" aria-checked="${w.active}" tabindex="${w.active ? 0 : -1}" data-wf="${esc(w.id)}"
-        class="flex w-full items-start gap-3 rounded-[14px] p-3.5 ${w.source === 'user' ? 'pr-12' : ''} text-left transition-transform duration-150 active:scale-[.995] ${w.active ? 'bg-line/[.08] shadow-[0_0_0_1.5px_rgb(var(--accent)/.7)]' : 'bg-line/[.04] hover:bg-line/[.07]'}">
-        <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full ${w.active ? 'bg-accent text-white' : 'shadow-[inset_0_0_0_1.5px_rgb(var(--line)/.3)]'}">${w.active ? icon('check', 'ic-sm !h-3 !w-3') : ''}</span>
+    const ck = R.checks[w.id], issues = w.active && ck && ck.online && !ck.ok ? ck.issues : [], user = w.source === 'user';
+    return `<div class="group relative">
+      <button role="radio" aria-checked="${w.active}" tabindex="${w.active ? 0 : -1}" data-wf="${esc(w.id)}" class="opt-row ${user ? 'pr-11' : ''}">
+        <span class="radio-dot" aria-hidden="true"></span>
         <span class="min-w-0 flex-1">
-          <span class="flex flex-wrap items-center gap-x-2 gap-y-1"><span class="text-[13px] font-semibold">${esc(w.name)}</span>
-            ${w.source === 'user' ? `<span class="${chipCls} bg-line/[.07] text-mute">Importado</span>` : ''}${wfChip(w)}</span>
-          ${w.description ? `<span class="mt-1 block text-[12px] leading-snug text-mute">${esc(w.description)}</span>` : ''}
+          <span class="flex items-center gap-2"><span class="truncate text-[13px] font-medium">${esc(w.name)}</span>
+            ${user ? `<span class="${chipCls} bg-line/[.07] text-mute">Importado</span>` : ''}${wfChip(w)}</span>
+          ${w.description ? `<span class="mt-0.5 block text-[12px] leading-snug text-mute">${esc(w.description)}</span>` : ''}
           ${issues.length ? `<ul class="mt-2.5 space-y-1.5 border-t border-line/[.08] pt-2.5 text-[12px] leading-snug text-mute">${issues.map(i => `<li class="flex gap-2"><span class="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent"></span><span class="select-text break-words">${esc(i.message)}</span></li>`).join('')}</ul>
             <span class="mt-2 block text-[11px] text-faint">Instalar o que falta: <code class="select-text rounded bg-line/[.08] px-1 py-0.5 font-mono">python -m smart_photo_edit setup</code></span>` : ''}
         </span></button>
-      ${w.source === 'user' ? `<button class="icon-btn icon-btn-sm absolute right-3 top-3" data-wf-del="${esc(w.id)}" aria-label="Remover ${esc(w.name)}" data-tip="Remover">${icon('trash', 'ic-sm')}</button>` : ''}
+      ${user ? `<button class="icon-btn icon-btn-sm absolute right-2 top-2 opacity-0 focus-visible:opacity-100 group-hover:opacity-100" data-wf-del="${esc(w.id)}" aria-label="Remover ${esc(w.name)}" data-tip="Remover">${icon('trash', 'ic-sm')}</button>` : ''}
     </div>`;
-  }).join('') + Object.entries(R.errors).map(([f, m]) => `<div class="rounded-[14px] bg-danger/10 p-3.5 text-[12px] text-danger"><b class="font-semibold">${esc(f)}</b>: ${esc(m)}</div>`).join('');
-  $('#wfDir').textContent = R.userDir;
+  }).join('') + Object.entries(R.errors).map(([f, m]) => `<div class="rounded-[12px] bg-danger/10 p-3 text-[12px] text-danger"><b class="font-semibold">${esc(f)}</b>: ${esc(m)}</div>`).join('');
   if (focused) $(`#wfList [data-wf="${CSS.escape(focused)}"]`)?.focus();
 }
+
+/* Perfis de modelos: o usuário escolhe um perfil pronto; os modelos ficam visíveis só para consulta. */
 const modelBytes = n => (n / 1e9).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' GB';
-let savingModels = false, modelRenderKey;
-const segmented = (name, label, value, options, locked, help = '') => {
-  const i = Math.max(0, options.findIndex(o => o.id === value));
-  return `<div data-model-seg="${name}"><span class="label mb-1.5 block" id="lbl-${name}">${label}</span>
-    <div class="seg" style="grid-template-columns:repeat(${options.length},1fr)" role="radiogroup" aria-labelledby="lbl-${name}">
-      <span class="seg-thumb" style="width:calc((100% - 4px)/${options.length});transform:translateX(${i * 100}%)"></span>
-      ${options.map((o, k) => `<button role="radio" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}" data-seg-key="${name}" data-seg-value="${esc(o.id)}" class="seg-btn" ${locked ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}
-    </div>${help ? `<p class="mt-1.5 text-[12px] leading-relaxed text-mute">${help}</p>` : ''}</div>`;
-};
+const gb = n => (n / 1e9).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' GB';
+let savingModels = false, pendingProfile = null, profDetails = false;
 function currentPreset(spec) {
   return Object.entries(spec.presets).find(([, p]) => Object.keys(p).every(k => p[k] === spec.values[k]))?.[0] ?? null;
 }
-function renderModelOptions() {
-  const spec = activeWf()?.model_options, section = $('#secModels'), box = $('#modelOptions');
-  section.classList.toggle('hidden', !spec);
-  if (!spec) { modelRenderKey = null; return; }
-  const v = spec.values, locked = savingModels || !!S.busy || R.status?.comfy?.launcher === 'preparing';
-  const renderKey = JSON.stringify([activeWf().id, spec, locked]);
-  if (modelRenderKey === renderKey) return;
-  const hadFocus = document.activeElement?.closest?.('#modelOptions') ? document.activeElement.dataset.segKey || document.activeElement.dataset.modelKey || document.activeElement.dataset.modelPreset : null;
-  modelRenderKey = renderKey;
-  const select = (key, label, options, help = '') => `<div><label class="label mb-1.5 block" for="model-${key}">${label}</label>
-    <select id="model-${key}" data-model-key="${key}" class="field" ${locked ? 'disabled' : ''}>${options.map(o => `<option value="${esc(o.id)}" ${o.id === v[key] ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>
-    ${help ? `<p class="mt-1.5 text-[12px] leading-relaxed text-mute">${help}</p>` : ''}</div>`;
-  const image = spec.images.find(x => x.id === v.image), encoder = spec.encoders.find(x => x.id === v.text_encoder);
-  const preset = currentPreset(spec);
-  box.innerHTML = segmented('preset', 'Perfil', preset ?? '', [{ id: 'original', label: 'Original' }, { id: 'compact', label: 'Compacto' }, { id: 'minimum', label: 'Menor · Q3' }], locked,
-      preset === 'compact' ? 'Codificador W4A8 na CPU, pouca VRAM, resolução 768. Ainda não validado em 6 GB.' : preset === 'minimum' ? 'Codificador GGUF Q3 experimental na CPU e pouca VRAM. Ainda não validado em 6 GB e pode perder qualidade.' : preset === 'original' ? 'Modelos INT8, execução automática. É o padrão e não é uma recomendação para 6 GB.' : 'Combinação personalizada.')
-  + select('image', 'Modelo de imagem', spec.images, image?.merged ? 'Viggle Turbo já incorporado: o app não aplica uma segunda LoRA. Q4 pode alterar detalhes e composição.' : 'O workflow Turbo aplica sua LoRA ao modelo base; o workflow Base mantém seus próprios passos.')
-  + select('text_encoder', 'Codificador da foto e do texto', spec.encoders, encoder?.vision_bytes ? `Inclui um projetor visual de ${modelBytes(encoder.vision_bytes)} para ler a foto. Total do codificador: ${modelBytes(encoder.size_bytes + encoder.vision_bytes)}. GGUF experimental: pode reduzir a fidelidade e a precisão de texto nas imagens.` : 'Qwen3-VL 8B próprio do Qwen-Image 2.1, com leitura da imagem preservada.')
-  + segmented('text_device', 'Onde executar o codificador', v.text_device, [{ id: 'default', label: 'Automático' }, { id: 'cpu', label: 'CPU / RAM' }], locked, 'Para uma GPU de 6 GB, use CPU / RAM. O codificador de 6,31 GB deixa pouca ou nenhuma margem para a edição na GPU; a CPU precisa de RAM disponível e pode ser mais lenta.')
-  + segmented('memory', 'Memória da GPU', v.memory, [{ id: 'auto', label: 'Automática' }, { id: 'low', label: 'Pouca VRAM' }], locked, 'O modo de pouca VRAM transfere pesos para a RAM e reserva memória para a execução.')
-  + `<div class="rounded-[14px] bg-line/[.05] p-3.5 text-[12px] leading-relaxed text-mute">
-      <p class="text-[13px] font-medium text-ink" role="status" aria-live="polite">${modelBytes(spec.total_bytes)} em disco</p>
-      <p class="mt-1">VAE: ${esc(spec.vae.label)} · ${modelBytes(spec.vae.size_bytes)}, fixo por compatibilidade com o modelo de imagem.</p>
-      <p class="mt-1">${esc(spec.notice)} As alterações ficam salvas e valem na próxima edição; o app baixa os arquivos que faltarem.</p></div>`;
-  if (hadFocus) box.querySelector(`[data-seg-key="${hadFocus}"][aria-checked="true"], [data-model-key="${hadFocus}"]`)?.focus();
+function profileStatus(p) {
+  if (p.missing_bytes == null) return '';
+  if (p.missing_bytes === 0) return `<span class="prof-status text-ok">${icon('check', 'ic-sm')}Baixado</span>`;
+  return `<span class="prof-status">${icon('download', 'ic-sm')}${p.missing_bytes < p.total_bytes ? 'Faltam ' + gb(p.missing_bytes) : 'Não baixado'}</span>`;
 }
-async function setModels(patch, preset = false) {
-  const wf = activeWf(); if (!wf?.model_options || savingModels) return;
-  savingModels = true; renderModelOptions();
+const painted = new WeakMap();
+function setHTML(el, html) { if (painted.get(el) === html) return false; painted.set(el, html); el.innerHTML = html; return true; }
+function renderModelOptions() {
+  const spec = activeWf()?.model_options, section = $('#secModels');
+  section.classList.toggle('hidden', !spec);
+  if (!spec) return;
+  const locked = savingModels || !!S.busy || preparing();
+  const sel = pendingProfile ?? currentPreset(spec), focusedProfile = document.activeElement?.dataset?.profile;
+  setHTML($('#profileList'), spec.profiles.map(p => {
+    const on = p.id === sel;
+    return `<button role="radio" aria-checked="${on}" tabindex="${on || (!sel && p.id === 'original') ? 0 : -1}" data-profile="${p.id}" class="prof-card" aria-disabled="${locked}"
+      aria-label="${esc(p.label)}, ${gb(p.total_bytes)} em disco">
+      <span class="flex w-full items-center justify-between gap-1"><span class="text-[13px] font-semibold">${esc(p.label)}</span>${p.experimental ? `<span class="text-faint" data-tip="Experimental">${icon('flask', 'ic-sm')}</span>` : ''}</span>
+      <span class="text-[12px] tabular-nums text-mute">${gb(p.total_bytes)}</span>
+      ${profileStatus(p)}
+    </button>`;
+  }).join(''));
+  if (focusedProfile && !document.activeElement?.dataset?.profile) $(`#profileList [data-profile="${focusedProfile}"]`)?.focus();
+
+  const p = spec.profiles.find(x => x.id === sel), missing = p ? p.missing_bytes : spec.missing_bytes;
+  const c = R.status?.comfy, dl = c?.download;
+  let action = '';
+  if (preparing()) {
+    const pct = dl?.total ? Math.min(100, Math.round(dl.done / dl.total * 100)) : null;
+    action = `<div class="mt-3 flex items-center gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="mb-1.5 flex justify-between gap-2 text-[12px]"><span class="truncate text-mute">${esc(dl ? `${gb(dl.done)} de ${gb(dl.total)}` : c.phase)}</span>${pct != null ? `<span class="tabular-nums font-medium">${pct}%</span>` : ''}</div>
+        <div class="meter ${pct == null ? 'meter-busy' : ''}"><span style="transform:scaleX(${pct == null ? 1 : pct / 100})"></span></div>
+      </div>
+      <button class="icon-btn icon-btn-sm" data-act="cancel" aria-label="Cancelar download" data-tip="Cancelar · retoma de onde parou">${icon('x', 'ic-sm')}</button>
+    </div>`;
+  } else if (missing > 0) {
+    action = `<div class="mt-3 flex items-center justify-between gap-3">
+      <p class="text-[12px] leading-snug text-mute">Faltam <b class="font-semibold text-ink">${gb(missing)}</b>. Baixe agora ou na primeira edição.</p>
+      <button class="btn-primary btn-sm" data-act="download" ${S.busy ? 'disabled' : ''}>${icon('download', 'ic-sm')}Baixar</button>
+    </div>`;
+  } else if (missing === 0) {
+    action = `<p class="mt-3 flex items-center gap-1.5 text-[12px] text-ok">${icon('check', 'ic-sm')}Tudo baixado. Edita sem internet.</p>`;
+  }
+  const list = p ? p.models : null;
+  const html = `<div class="rounded-[14px] bg-line/[.05] p-3.5">
+    <p class="text-[12px] leading-relaxed text-mute">${esc(p ? p.summary : 'Combinação de modelos definida antes desta versão. Escolha um perfil para voltar ao catálogo.')}</p>
+    ${action}
+    ${list ? `<details class="disclosure mt-3 border-t border-line/[.08] pt-2.5" ${profDetails ? 'open' : ''}>
+      <summary class="text-[12px] font-medium text-mute hover:text-ink">${icon('layers', 'ic-sm')}Modelos usados</summary>
+      <ul class="mt-2 space-y-1">${list.map(m => `<li class="flex justify-between gap-3 text-[12px]"><span class="min-w-0 truncate">${esc(m.label)}</span><span class="shrink-0 tabular-nums text-mute">${gb(m.size_bytes)}</span></li>`).join('')}</ul>
+      <p class="mt-2.5 text-[11px] leading-relaxed text-faint">${esc(spec.notice)}</p>
+    </details>` : ''}
+  </div>`;
+  const info = $('#profileInfo'), act = document.activeElement?.dataset?.act;
+  if (setHTML(info, html) && act) info.querySelector(`[data-act]`)?.focus();
+}
+async function setProfile(id) {
+  const wf = activeWf(), spec = wf?.model_options; if (!spec || savingModels) return;
+  savingModels = true; pendingProfile = id; renderModelOptions();
   try {
-    const payload = { model_choices: { [wf.id]: patch } };
-    if (preset) payload.workflow_params = { [wf.id]: { resolution: 768 } };
+    const payload = { model_choices: { [wf.id]: spec.presets[id] } };
+    payload.workflow_params = { [wf.id]: { resolution: id === 'original' ? 1024 : 768 } };
     if (!await saveSettings(payload)) return;
     await loadWorkflows();
-    renderWfList(); renderWfParams(); renderModelOptions();
+    renderWfList(); renderWfParams();
     refreshChecks([wf.id]);
-  } finally { savingModels = false; renderModelOptions(); }
+  } finally { savingModels = false; pendingProfile = null; renderModelOptions(); }
 }
-$('#modelOptions').addEventListener('change', e => {
-  const key = e.target.dataset.modelKey;
-  if (key) setModels({ [key]: e.target.value });
+async function startEngine() {
+  try {
+    if (!await saveSettings({ engine_mode: 'managed' })) return;
+    await api('/api/comfy/start', { method: 'POST' });
+  } catch (e) { toast({ kind: 'error', text: e.message }); }
+  await refreshStatus();
+}
+async function cancelEngine() {
+  try { await api('/api/comfy/cancel', { method: 'POST' }); toast({ text: 'Download pausado. Continua de onde parou na próxima vez.', duration: 3500 }); }
+  catch (e) { toast({ kind: 'error', text: e.message }); }
+  await refreshStatus();
+}
+$('#profileList').addEventListener('click', e => {
+  const b = e.target.closest('[data-profile]');
+  if (b && b.getAttribute('aria-checked') !== 'true' && b.getAttribute('aria-disabled') !== 'true') setProfile(b.dataset.profile);
 });
-$('#modelOptions').addEventListener('click', e => {
-  const b = e.target.closest('[data-seg-key]');
-  if (!b || b.getAttribute('aria-checked') === 'true') return;
-  const { segKey: key, segValue: value } = b.dataset;
-  if (key === 'preset') setModels(activeWf().model_options.presets[value], value !== 'original');
-  else setModels({ [key]: value });
-});
-$('#modelOptions').addEventListener('keydown', e => {
-  const b = e.target.closest('[data-seg-key]'); if (!b || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+$('#profileList').addEventListener('keydown', e => {
+  const b = e.target.closest('[data-profile]'); if (!b || b.getAttribute('aria-disabled') === 'true' || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
   e.preventDefault();
-  const all = $$(`#modelOptions [data-seg-key="${b.dataset.segKey}"]`), i = all.indexOf(b), next = all[Math.max(0, Math.min(all.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
-  if (next !== b) next.click();
+  const all = $$('#profileList [data-profile]'), i = all.indexOf(b), next = all[Math.max(0, Math.min(all.length - 1, i + (['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : -1)))];
+  if (next !== b) { next.focus(); next.click(); }
 });
+$('#profileInfo').addEventListener('click', e => {
+  const a = e.target.closest('[data-act]')?.dataset.act;
+  if (a === 'download') startEngine(); else if (a === 'cancel') cancelEngine();
+});
+$('#profileInfo').addEventListener('toggle', e => { if (e.target.matches('details')) profDetails = e.target.open; }, true);
 
 function renderWfParams() {
   const wf = activeWf(), sec = $('#secParams'), box = $('#wfParams');
@@ -1724,25 +1992,31 @@ $('#wfFile').addEventListener('change', async e => {
 
 /* Motor local: preparo e status. */
 function renderAdvStatus() {
-  const c = R.status?.comfy, el = $('#advUrlMsg'), button = $('#advStart'), st = engineState();
+  const c = R.status?.comfy, st = engineState(), button = $('#advStart');
   $('#advDot').className = 'h-2 w-2 shrink-0 rounded-full ' + DOT[st];
-  const label = (ic, text) => { button.innerHTML = `${icon(ic, ic === 'loader' ? 'spin' : '')}<span>${text}</span>`; };
-  if (!c) { el.textContent = 'O app local não responde.'; button.disabled = true; label('play', 'Preparar motor local'); return; }
-  const preparing = c.launcher === 'preparing' || c.launcher === 'running' && !c.online;
-  button.disabled = preparing;
-  if (preparing) label('loader', 'Preparando…'); else if (c.online) label('retry', 'Verificar'); else if (c.error) label('retry', 'Tentar novamente'); else label('play', 'Preparar motor local');
-  el.textContent = c.online ? `Motor pronto${c.device?.name ? ' · ' + c.device.name : ''}` : c.managed ? c.phase : 'Conexão externa configurada pela linha de comando.';
+  const set = (title, sub, act, ic, label, disabled = false) => {
+    $('#advEngTitle').textContent = title; $('#advUrlMsg').textContent = sub;
+    button.dataset.act = act; button.disabled = disabled; button.hidden = !label;
+    button.innerHTML = label ? `${icon(ic, 'ic-sm' + (ic === 'loader' ? ' spin' : ''))}<span>${label}</span>` : '';
+  };
+  if (!c) return set('O app local não responde', 'Reinicie o Smart Photo Edit.', '', '', '');
+  if (c.online) return set('Motor pronto', c.device?.name || 'Pronto para editar', 'check', 'retry', 'Verificar');
+  // Com perfis visíveis, o progresso e o cancelamento ficam junto do perfil; não repete o botão aqui.
+  if (c.launcher === 'preparing') return set('Preparando o motor', c.phase, 'cancel', 'x', activeWf()?.model_options ? '' : 'Cancelar');
+  if (c.launcher === 'running') return set('Iniciando o motor', c.phase, '', 'loader', 'Iniciando', true);
+  if (c.error) return set('Não foi possível preparar', c.error, 'start', 'retry', 'Tentar de novo');
+  if (!c.managed) return set('Motor externo desconectado', 'Configurado pela linha de comando.', 'start', 'play', c.can_launch ? 'Iniciar' : '');
+  set('Motor parado', 'Inicia sozinho na primeira edição.', 'start', 'play', 'Iniciar');
 }
 async function saveSettings(patch) {
   try { advSettings = await api('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }); return true; }
   catch (e) { toast({ kind: 'error', text: e.message }); return false; }
 }
-$('#advStart').onclick = async () => {
-  try {
-    if (!await saveSettings({ engine_mode: 'managed' })) return;
-    await api('/api/comfy/start', { method: 'POST' });
-    await refreshStatus();
-  } catch (e) { toast({ kind: 'error', text: e.message }); }
+$('#advStart').onclick = e => {
+  const act = e.currentTarget.dataset.act;
+  if (act === 'cancel') cancelEngine();
+  else if (act === 'check') { refreshStatus(); refreshChecks(); }
+  else if (act === 'start') R.status?.comfy?.managed === false ? api('/api/comfy/start', { method: 'POST' }).then(refreshStatus, err => toast({ kind: 'error', text: err.message })) : startEngine();
 };
 
 async function openAdv() {
@@ -1756,13 +2030,13 @@ async function openAdv() {
     [...body.children].forEach(c => { if (c.id !== 'advDemo') c.classList.add('hidden'); });
     setTimeout(() => $('#advClose').focus(), 0); return;
   }
-  note?.remove(); [...body.children].forEach(c => { if (c.tagName === 'SECTION' && c.id !== 'secParams') c.classList.remove('hidden'); });
+  note?.remove(); ['secEngine', 'secWf'].forEach(id => $('#' + id).classList.remove('hidden'));
   try { advSettings = await api('/api/settings'); } catch { advSettings = {}; }
   renderAdvStatus(); renderWfList(); renderWfParams(); renderModelOptions();
-  setTimeout(() => $('#advStart').focus(), 0);
-  await refreshStatus(); refreshChecks();
+  setTimeout(() => ($('#profileList [aria-checked="true"]') || $('#wfList [aria-checked="true"]') || $('#advClose')).focus(), 0);
+  await Promise.all([refreshStatus(), loadWorkflows().then(renderModelOptions).catch(() => {})]); refreshChecks();
 }
-function closeAdv() { adv.dataset.open = 'false'; $('#app').inert = false; advReturn?.focus?.(); }
+function closeAdv() { clearTimeout(fastPoll); adv.dataset.open = 'false'; $('#app').inert = false; advReturn?.focus?.(); }
 adv.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeAdv(); } });
 adv.addEventListener('pointerdown', e => { if (e.target.matches('[data-close-adv]')) { e.preventDefault(); closeAdv(); } });
 $('#advClose').onclick = closeAdv;
@@ -1772,9 +2046,169 @@ $('#popAdv').onclick = openAdv;
 async function bootRemote() {
   try { R.status = await api('/api/status'); R.remote = true; engine = remoteEngine; await loadWorkflows(); }
   catch { R.remote = false; engine = demoEngine; }
-  renderEngine(); applySupports(); renderLooks();
+  renderEngine(); applySupports(); renderLooks(); renderBatch();
   if (R.remote) setInterval(() => { if (!document.hidden) refreshStatus(); }, 5000);
 }
+
+/* ───────────────────────── modo: remover fundo (lote) ───────────────────────── */
+const BG = { items: [], running: false, ctrl: null, max: 200 };
+const BG_LABEL = 'Remover fundo (BiRefNet)';
+function setMode(m) {
+  if (m === 'bg' && !hasImg()) { /* ok: o modo não depende da imagem aberta */ }
+  S.mode = m; $('#app').dataset.mode = m;
+  const bg = m === 'bg', view = $('#bgView');
+  view.classList.toggle('hidden', !bg); view.classList.toggle('flex', bg);
+  ['#promptDock', '#strip', '#fitbox', '#empty'].forEach(sel => { $(sel).inert = bg; });
+  $('#modeEdit').setAttribute('aria-pressed', String(!bg)); $('#modeBg').setAttribute('aria-pressed', String(bg));
+  closePops(); renderChrome(); renderBatch();
+}
+$('#modeEdit').onclick = () => setMode('edit'); $('#modeBg').onclick = () => setMode('bg');
+
+async function thumbOf(blob, max = 360) {
+  try {
+    const bmp = await createImageBitmap(blob), k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(bmp.width * k)); cv.height = Math.max(1, Math.round(bmp.height * k));
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height); bmp.close?.();
+    return URL.createObjectURL(await new Promise(r => cv.toBlob(r, 'image/webp', .85)));
+  } catch { return URL.createObjectURL(blob); }
+}
+function bgNotice(text) { const el = $('#bgNotice'); el.textContent = text; el.classList.toggle('hidden', !text); }
+async function addBatchFiles(files) {
+  const all = [...files], list = all.filter(f => isImageFile(f)), skipped = [];
+  const seen = new Set(BG.items.map(i => `${i.file.name}|${i.file.size}`));
+  const fresh = [];
+  for (const f of list.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, 'pt-BR', { numeric: true }))) {
+    if (f.size > MAX_BYTES) { skipped.push(`${f.name} (maior que 20 MB)`); continue; }
+    if (seen.has(`${f.name}|${f.size}`)) continue;
+    if (BG.items.length + fresh.length >= BG.max) { skipped.push(`${f.name} (limite de ${BG.max} por lote)`); continue; }
+    seen.add(`${f.name}|${f.size}`);
+    fresh.push({ id: uid(), file: f, name: f.name.replace(/\.[^.]+$/, '').slice(0, 60), status: 'queued', p: 0 });
+  }
+  const ignored = all.length - list.length;
+  if (!fresh.length) { toast({ kind: 'error', text: all.length ? 'Nenhuma foto nova: use PNG, JPG ou WebP de até 20 MB.' : 'Nada para adicionar.' }); return; }
+  BG.items.push(...fresh); renderBatch();
+  const parts = [`${fresh.length} foto${fresh.length > 1 ? 's' : ''} adicionada${fresh.length > 1 ? 's' : ''}`];
+  if (skipped.length) parts.push(`${skipped.length} ignorada${skipped.length > 1 ? 's' : ''} (${skipped.slice(0, 2).join('; ')}${skipped.length > 2 ? '…' : ''})`);
+  if (ignored) parts.push(`${ignored} arquivo${ignored > 1 ? 's' : ''} de outro tipo`);
+  toast({ kind: skipped.length ? 'info' : 'success', text: parts.join(' · '), duration: 6000 });
+  for (const it of fresh) { it.thumb = await thumbOf(it.file); renderBatch(); }
+}
+/* Pastas soltas: percorre recursivamente os itens do arrastar-e-soltar. */
+async function filesFromDrop(dt) {
+  const entries = [...(dt.items || [])].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...dt.files];
+  const out = [];
+  const walk = async entry => {
+    if (entry.isFile) { out.push(await new Promise((res, rej) => entry.file(res, rej))); return; }
+    const reader = entry.createReader();
+    for (;;) {
+      const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+      if (!batch.length) break;
+      for (const e of batch) await walk(e);
+    }
+  };
+  for (const e of entries) await walk(e);
+  return out;
+}
+const bgPick = () => $('#bgFiles').click(), bgPickFolder = () => $('#bgFolder').click();
+$('#bgAdd').onclick = $('#bgAdd2').onclick = bgPick; $('#bgFolderBtn').onclick = $('#bgFolderBtn2').onclick = bgPickFolder;
+$('#bgFiles').onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) addBatchFiles(f); };
+$('#bgFolder').onchange = e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) addBatchFiles(f); };
+
+const bgCounts = () => { const c = { queued: 0, running: 0, done: 0, error: 0 }; BG.items.forEach(i => { c[i.status]++; }); return c; };
+function bgCard(it) {
+  const src = it.status === 'done' ? (it.resThumb || it.thumb) : it.thumb;
+  const over = it.status === 'running' ? `<span class="glass absolute inset-x-2 bottom-2 inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-medium">${icon('loader', 'ic-sm spin')}<span id="bgp-${it.id}" class="truncate tabular-nums">${esc(it.phase || 'Removendo…')}</span></span>`
+    : it.status === 'queued' ? `<span class="glass absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-medium text-mute">${icon('clock', 'ic-sm')}Na fila</span>`
+    : it.status === 'error' ? `<span class="absolute inset-x-2 bottom-2 rounded-[10px] bg-danger/90 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white" title="${esc(it.error)}">${esc(it.error)}</span>`
+    : `<span class="glass absolute left-2 top-2 inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-medium text-ok">${icon('check', 'ic-sm')}Pronto</span>`;
+  const actions = it.status === 'done'
+    ? `<button data-bg="compare" class="icon-btn icon-btn-sm bg-bg/80" aria-label="Comparar ${esc(it.name)} com o original" data-tip="Comparar com o original">${icon('split', 'ic-sm')}</button><button data-bg="export" class="icon-btn icon-btn-sm bg-bg/80" aria-label="Exportar ${esc(it.name)}" data-tip="Exportar PNG">${icon('download', 'ic-sm')}</button>`
+    : it.status === 'error' ? `<button data-bg="retry" class="icon-btn icon-btn-sm bg-bg/80" aria-label="Tentar de novo" data-tip="Tentar de novo">${icon('retry', 'ic-sm')}</button>` : '';
+  return `<article class="bg-card group relative" data-id="${it.id}">
+    <div class="checker relative aspect-[4/5] overflow-hidden rounded-[14px]" style="box-shadow:0 0 0 .5px rgb(var(--line) / .2)">
+      ${src ? `<img src="${src}" alt="${esc(it.name)}" draggable="false" class="h-full w-full object-contain ${it.status === 'running' || it.status === 'queued' ? 'opacity-70' : ''}">` : '<div class="breathe h-full w-full bg-line/[.08]"></div>'}
+      ${over}
+      <span class="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">${actions}<button data-bg="remove" class="icon-btn icon-btn-sm bg-bg/80" aria-label="Tirar ${esc(it.name)} da lista" data-tip="Tirar da lista" ${it.status === 'running' ? 'disabled' : ''}>${icon('x', 'ic-sm')}</button></span>
+    </div>
+    <p class="mt-1.5 truncate px-0.5 text-[12px] font-medium" title="${esc(it.file.webkitRelativePath || it.file.name)}">${esc(it.name)}</p></article>`;
+}
+function renderBatch() {
+  const c = bgCounts(), n = BG.items.length, remote = R.remote;
+  $('#bgEmpty').classList.toggle('hidden', n > 0); $('#bgGrid').classList.toggle('hidden', !n);
+  bgNotice(remote ? '' : 'O modo Remover fundo precisa do app local (python -m smart_photo_edit).');
+  $('#bgGrid').innerHTML = BG.items.map(bgCard).join('');
+  $('#bgStatus').textContent = !n ? '' : BG.running ? `Removendo ${c.done + c.error + 1} de ${c.queued + c.running + c.done + c.error}…` : `${c.done} de ${n} pronta${c.done === 1 ? '' : 's'}${c.error ? ` · ${c.error} com erro` : ''}`;
+  const run = $('#bgRun'), pending = c.queued + c.error;
+  run.disabled = !BG.running && (!remote || !pending);
+  $('#bgRunText').textContent = BG.running ? 'Parar' : pending && pending !== n ? `Remover ${pending} fundo${pending > 1 ? 's' : ''}` : 'Remover fundos';
+  $('#bgRunIcon').innerHTML = `<use href="#i-${BG.running ? 'square' : 'scissors'}"/>`;
+  run.className = (BG.running ? 'btn-quiet' : 'btn-primary');
+  run.dataset.tip = !remote ? 'Disponível no app local' : BG.running ? 'Parar depois da foto atual' : pending ? 'Remover o fundo das fotos da lista' : 'Adicione fotos';
+  $('#bgExport').disabled = !c.done; $('#bgExport').lastChild.textContent = c.done > 1 ? `Exportar ${c.done} (ZIP)` : 'Exportar';
+  $('#bgClear').disabled = !n || BG.running; $('#bgAdd').disabled = $('#bgFolderBtn').disabled = false;
+}
+function paintBatchProgress(it) { const el = $(`#bgp-${it.id}`); if (el) el.textContent = `${it.phase || 'Removendo…'} · ${Math.round(it.p * 100)}%`; }
+
+async function runBatch() {
+  if (BG.running) { BG.ctrl?.abort(); BG.stop = true; renderBatch(); return; }
+  BG.running = true; BG.stop = false; BG.items.filter(i => i.status === 'error').forEach(i => { i.status = 'queued'; i.error = ''; });
+  renderBatch();
+  for (const it of BG.items) {
+    if (BG.stop) break;
+    if (it.status !== 'queued') continue;
+    it.status = 'running'; it.p = 0; it.phase = ''; BG.ctrl = new AbortController(); renderBatch();
+    try {
+      const [r] = await remoteEngine.edit({ src: { blob: it.file }, prompt: BG_LABEL, negative: '', seed: 0, n: 1, mode: 'remove_background', name: it.name, signal: BG.ctrl.signal,
+        onProgress: (p, phase) => { it.p = p; it.phase = phase; paintBatchProgress(it); } });
+      it.result = r; it.status = 'done'; it.resThumb = await thumbOf(r.blob);
+    } catch (err) {
+      if (err.name === 'AbortError') { it.status = 'queued'; break; }
+      it.status = 'error'; it.error = err instanceof EngineError ? err.message : 'Não foi possível remover o fundo.';
+      if (['comfy_offline', 'engine_setup_failed', 'launch_failed', 'app_offline'].includes(err.code)) { renderBatch(); toast({ kind: 'error', text: err.message, action: { label: 'Configurar', icon: 'settings', run: () => openAdv() }, duration: 10000 }); break; }
+    }
+    renderBatch();
+  }
+  BG.running = false; BG.ctrl = null; renderBatch();
+  const c = bgCounts();
+  if (!BG.stop && c.done) toast({ kind: 'success', text: `${c.done} fundo${c.done > 1 ? 's removidos' : ' removido'}${c.error ? ` · ${c.error} com erro` : ''}`, action: c.done > 1 ? { label: 'Exportar ZIP', icon: 'download', run: exportBatch } : undefined });
+  else if (BG.stop) toast({ text: 'Lote interrompido. As fotos prontas continuam na lista e no histórico.' });
+}
+$('#bgRun').onclick = runBatch;
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob), a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+async function exportBatch() {
+  const done = BG.items.filter(i => i.status === 'done'); if (!done.length) return;
+  if (done.length === 1) { downloadBlob(done[0].result.blob, `${done[0].name}-sem-fundo.png`); return; }
+  try {
+    const res = await fetch('/api/results/zip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: done.map(i => ({ id: i.result.resultId, name: `${i.name}-sem-fundo` })) }) });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Erro ${res.status}`);
+    downloadBlob(await res.blob(), 'fotos-sem-fundo.zip'); toast({ kind: 'success', text: `${done.length} PNGs exportados em ZIP` });
+  } catch (e) { toast({ kind: 'error', text: e.message }); }
+}
+$('#bgExport').onclick = exportBatch;
+$('#bgClear').onclick = () => { const stash = BG.items; BG.items = []; renderBatch(); toast({ text: 'Lista limpa. O histórico foi mantido.', action: { label: 'Desfazer', icon: 'undo', run: () => { BG.items = stash; renderBatch(); } } }); };
+
+/* Abre o par original → sem fundo no modo Editar, já com a comparação ativa. */
+async function openCompare(original, result, name, meta) {
+  const [a, b] = await Promise.all([imageSize(original), imageSize(result)]);
+  const mk = (blob, size, extra) => ({ id: uid(), url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, prompt: 'Original', seed: undefined, ...extra });
+  const versions = [mk(original, a, { kind: 'original' }), mk(result, b, { kind: 'edit', prompt: meta?.prompt || BG_LABEL, seed: meta?.seed, metadata: meta, resultId: meta?.id || meta?.resultId })];
+  const previous = snapshot(), next = { versions, sel: 1, name: name || 'Sem título' };
+  perform({ redo: () => restore(next), undo: () => restore(previous) });
+  setMode('edit'); S.split = true; S.sbs = false; renderStage(); renderChrome();
+}
+$('#bgGrid').addEventListener('click', async e => {
+  const b = e.target.closest('[data-bg]'), card = e.target.closest('[data-id]'); if (!b || !card) return;
+  const it = BG.items.find(x => x.id === card.dataset.id); if (!it) return;
+  if (b.dataset.bg === 'remove') { if (it.status !== 'running') { BG.items = BG.items.filter(x => x !== it); renderBatch(); } }
+  else if (b.dataset.bg === 'export') downloadBlob(it.result.blob, `${it.name}-sem-fundo.png`);
+  else if (b.dataset.bg === 'retry') { it.status = 'queued'; it.error = ''; renderBatch(); if (!BG.running) runBatch(); }
+  else if (b.dataset.bg === 'compare') { try { await openCompare(it.file, it.result.blob, it.name, { ...it.result.metadata, id: it.result.resultId }); } catch (err) { toast({ kind: 'error', text: err.message }); } }
+});
 
 /* ───────────────────────── botões / init ───────────────────────── */
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;

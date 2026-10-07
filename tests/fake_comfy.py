@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import uuid
 
 from aiohttp import web
+from PIL import Image
 
 from .conftest import make_png
 
@@ -99,6 +101,11 @@ class FakeComfy:
                                         "outputs": {"14": {"images": [{"filename": f"{pid}.png", "subfolder": "", "type": "temp"}]}}}})
 
     async def view(self, request):
+        graph = self.prompts.get(request.query.get('filename', '').removesuffix('.png'), {})
+        if any(node['class_type'] == 'RemoveBackground' for node in graph.values()):
+            buf = io.BytesIO()
+            Image.new('RGBA', (32, 24), (10, 200, 10, 128)).save(buf, 'PNG')
+            return web.Response(body=buf.getvalue(), content_type='image/png')
         return web.Response(body=make_png((10, 200, 10), (32, 24)), content_type="image/png")
 
     async def queue(self, request):
