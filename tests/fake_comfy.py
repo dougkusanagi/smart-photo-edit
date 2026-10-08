@@ -7,7 +7,7 @@ import json
 import uuid
 
 from aiohttp import web
-from PIL import Image
+from PIL import Image, ImageOps
 
 from .conftest import make_png
 
@@ -77,14 +77,23 @@ class FakeComfy:
 
     async def _execute(self, pid):
         self.running = pid
+        graph = self.prompts[pid]
+        encoder = next((nid for nid, n in graph.items() if n['class_type'] == 'TextEncodeQwenImage21'), None)
+        decoder = next((nid for nid, n in graph.items() if n['class_type'] == 'VAEDecode'), None)
+        upscaler = next((nid for nid, n in graph.items() if n['class_type'] in ('SPEOneStepUpscale', 'KSampler')), None)
         for ws in self.sockets:  # codificador de texto também emite "progress" no ComfyUI real
-            await ws.send_json({"type": "progress", "data": {"value": 5, "max": 12, "prompt_id": pid, "node": "7"}})
+            if encoder:
+                await ws.send_json({"type": "executing", "data": {"prompt_id": pid, "node": encoder}})
+            await ws.send_json({"type": "progress", "data": {"value": 5, "max": 12, "prompt_id": pid, "node": encoder or "7"}})
         for step in range(1, 4):
             for ws in self.sockets:
-                await ws.send_json({"type": "progress", "data": {"value": step, "max": 3, "prompt_id": pid, "node": "12"}})
+                await ws.send_json({"type": "progress", "data": {"value": step, "max": 3, "prompt_id": pid, "node": upscaler or "12"}})
             await asyncio.sleep(self.duration / 3)
             if pid in self.interrupted:
                 break
+        if decoder and pid not in self.interrupted:
+            for ws in self.sockets:
+                await ws.send_json({"type": "executing", "data": {"prompt_id": pid, "node": decoder}})
         self.running = None
         self.finished.add(pid)
 
@@ -102,6 +111,18 @@ class FakeComfy:
 
     async def view(self, request):
         graph = self.prompts.get(request.query.get('filename', '').removesuffix('.png'), {})
+        upscaler = next((n for n in graph.values() if n['class_type'] in ('SPEOneStepUpscale', 'ImageScaleBy')), None)
+        if upscaler:
+            input_node = graph[upscaler['inputs']['image'][0]]
+            filename = input_node['inputs']['image'].removesuffix(' [temp]')
+            uploaded = next(u for u in reversed(self.uploads) if u['filename'] == filename)
+            with Image.open(io.BytesIO(uploaded['bytes'])) as image:
+                image = ImageOps.exif_transpose(image).convert('RGB')
+                scale = upscaler['inputs'].get('scale', upscaler['inputs'].get('scale_by'))
+                image = image.resize((image.width * scale, image.height * scale))
+                buf = io.BytesIO()
+                image.save(buf, 'PNG')
+            return web.Response(body=buf.getvalue(), content_type='image/png')
         if any(node['class_type'] == 'RemoveBackground' for node in graph.values()):
             buf = io.BytesIO()
             Image.new('RGBA', (32, 24), (10, 200, 10, 128)).save(buf, 'PNG')

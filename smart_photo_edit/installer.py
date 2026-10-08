@@ -130,7 +130,54 @@ def install_extensions(wf: Workflow, comfyui_dir: Path, progress=None) -> list[s
             raise ValueError('Nó embutido desconhecido.')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
-    packages = []
+    packages = list(wf.requires.get('engine_packages', []))
+    # Bibliotecas de inferência ficam fora de custom_nodes e usam namespace próprio.
+    for library in wf.requires.get('libraries', []):
+        root = comfyui_dir / 'spe_libraries'
+        root.mkdir(parents=True, exist_ok=True)
+        target = root / library['name']
+        if not target.resolve().is_relative_to(root.resolve()):
+            raise ValueError('Pasta de biblioteca inválida.')
+        marker = target / '.spe-revision'
+        if target.exists():
+            if not marker.is_file() or marker.read_text() != library['revision']:
+                raise ValueError('Biblioteca existente tem revisão diferente do catálogo.')
+            continue
+        archive = comfyui_dir / f"spe-{library['name']}-{library['revision']}.zip"
+        download(library['url'], archive, progress)
+        if hashlib.sha256(archive.read_bytes()).hexdigest() != library['sha256']:
+            archive.unlink()
+            raise ValueError('Arquivo da biblioteca corrompido.')
+        with tempfile.TemporaryDirectory(dir=root, prefix='.spe-install-') as temp:
+            staging = Path(temp)
+            with zipfile.ZipFile(archive) as z:
+                for entry in z.infolist():
+                    if not (staging / entry.filename).resolve().is_relative_to(staging.resolve()):
+                        raise ValueError('Arquivo da biblioteca contém caminho inválido.')
+                z.extractall(staging)
+            folders = list(staging.iterdir())
+            if len(folders) != 1:
+                raise ValueError('Arquivo da biblioteca inválido.')
+            prepared = staging / 'prepared'
+            prepared.mkdir()
+            import shutil
+            import re
+            for name in library['include']:
+                source = folders[0] / name
+                if not source.resolve().is_relative_to(folders[0].resolve()):
+                    raise ValueError('Caminho de biblioteca inválido.')
+                if source.is_dir():
+                    shutil.copytree(source, prepared / name)
+                else:
+                    shutil.copy2(source, prepared / name)
+            for file in prepared.rglob('*.py'):
+                data = file.read_text(encoding='utf-8')
+                data = re.sub(r'(?m)^(from|import) (ldm|models|utils)(?=[. ])',
+                              lambda m: f"{m[1]} {library['namespace']}.{m[2]}", data)
+                file.write_text(data, encoding='utf-8')
+            (prepared / '.spe-revision').write_text(library['revision'])
+            prepared.replace(target)
+        archive.unlink()
     for extension in wf.requires.get('extensions', []):
         root = comfyui_dir / 'custom_nodes'
         root.mkdir(parents=True, exist_ok=True)

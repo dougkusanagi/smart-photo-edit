@@ -45,6 +45,7 @@
   html, body { height: 100%; }
   body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.006em; }
   #stage { --dock: 0px; --side: 0px; }
+  #stage[data-sbs="true"] #frame { visibility: hidden; }
   /* Com o histórico aberto, o palco cede a largura do painel em vez de ficar escondido atrás dele. */
   @media (min-width: 1100px) { body[data-history="true"] #stage { --side: 412px; } }
 
@@ -62,7 +63,15 @@
   @media (max-width: 639px) {
     #app > header { padding-inline: 12px; gap: 8px; }
     #titleWrap, .hide-sm { display: none; }
-    #fitbox { left: 92px; right: 16px; }
+    #stage { --rail: 0px; --zoom: 0px; }
+    #stage[data-versions="true"] { --rail: 80px; }
+    #stage[data-sbs="true"] { --zoom: 44px; }
+    #fitbox { left: 16px; right: 16px; bottom: calc(var(--dock) + 36px + var(--rail) + var(--zoom)); }
+    #zoomBar { bottom: -44px; }
+    #versionDock { top: auto; right: 16px; justify-content: center; }
+    #strip { max-width: 100%; }
+    #railList { flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; }
+    #railList > div { flex-shrink: 0; }
   }
 
   #app > header { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
@@ -183,6 +192,35 @@
   /* Xadrez sob a imagem: mostra a transparência de PNGs RGBA e não aparece em fotos opacas. */
   .checker { background: conic-gradient(rgb(var(--ink) / .1) 25%, rgb(var(--ink) / .04) 0 50%, rgb(var(--ink) / .1) 0 75%, rgb(var(--ink) / .04) 0) 0 0 / 16px 16px; }
   #app[data-mode="bg"] .edit-only { display: none; }
+  #upscaleDock { position: absolute; bottom: 20px; left: 0; right: var(--side); z-index: 20; display: flex; justify-content: center; padding: 0 16px; }
+  #upscaleDock[hidden] { display: none; }
+  .upscale-panel { width: 100%; max-width: 720px; border-radius: 20px; padding: 16px; }
+  .upscale-options { display: flex; align-items: end; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .upscale-control { display: flex; flex-direction: column; gap: 6px; }
+  .upscale-control .field { width: auto; }
+  .upscale-control[hidden] { display: none; }
+  .upscale-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .upscale-copy { max-width: 65ch; font-size: 12px; line-height: 1.5; color: rgb(var(--mute)); }
+  #upscaleSize { flex: 1; min-width: 120px; font-size: 12px; font-variant-numeric: tabular-nums; }
+  #upscaleScale { width: 80px; }
+  #upscaleScale:focus-visible { outline: 2px solid rgb(var(--accent)); }
+  #upscaleNotice { margin-top: 8px; }
+  #upscaleOriginal { accent-color: rgb(var(--accent)); }
+  #upscaleProgress { margin-top: 12px; }
+  #upscaleProgress[hidden] { display: none; }
+  .upscale-progress-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; max-width: none; }
+  #app[data-mode="upscale"] #stage[data-sbs="true"] #busyLayer { display: none; }
+  #upscaleProgressValue { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #upscaleProgressBar { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: rgb(var(--line) / .12); }
+  #upscaleProgressFill { height: 100%; width: 0; background: rgb(var(--accent)); }
+  @media (max-width: 480px) and (max-height: 650px) {
+    .upscale-panel { padding: 12px; max-height: calc(100dvh - 340px); overflow-y: auto; }
+    .upscale-options { gap: 8px; margin-top: 8px; }
+    .upscale-control { gap: 4px; }
+    .upscale-actions { gap: 8px; margin-top: 8px; }
+  }
+  #app[data-mode="upscale"] #empty { bottom: calc(var(--dock, 0px) + 20px); }
+  #app[data-mode="upscale"] #stack { display: none; }
   .bg-card { content-visibility: auto; contain-intrinsic-size: 220px 280px; }
   .pane { cursor: grab; } .pane.grabbing { cursor: grabbing; }
   .pane > img { max-width: none; }
@@ -198,6 +236,7 @@
   .history-preview-facts dd { margin-top: 3px; overflow-wrap: anywhere; }
   #promptLimitMessage { color: rgb(var(--danger)); }
   @media (max-width: 639px) {
+    #upscaleSize { flex-basis: 100%; }
     .history-preview-body { padding: 16px; }
     .history-preview-pair { grid-template-columns: minmax(0, 1fr); }
     .history-preview-pair img { height: 30vh; }
@@ -273,9 +312,10 @@
       </div>
     </div>
 
-    <div id="modeSeg" class="seg seg-flat grid-cols-2" role="group" aria-label="Modo">
+    <div id="modeSeg" class="seg seg-flat grid-cols-3" role="group" aria-label="Modo">
       <button id="modeEdit" class="seg-btn gap-1.5 !px-3" aria-label="Editar" aria-pressed="true" data-tip="Editar com instruções" data-keys="alt+1"><svg class="ic"><use href="#i-wand"/></svg><span class="hidden sm:inline">Editar</span></button>
       <button id="modeBg" class="seg-btn gap-1.5 !px-3" aria-label="Remover fundo" aria-pressed="false" data-tip="Remover o fundo de várias fotos" data-keys="alt+2"><svg class="ic"><use href="#i-scissors"/></svg><span class="hidden sm:inline">Remover fundo</span></button>
+      <button id="modeUpscale" class="seg-btn gap-1.5 !px-3" aria-label="Upscale" aria-pressed="false" data-tip="Ampliar a foto com IA" data-keys="alt+3"><svg class="ic"><use href="#i-maximize"/></svg><span class="hidden sm:inline">Upscale</span></button>
     </div>
 
     <div class="flex items-center justify-end gap-1">
@@ -344,7 +384,7 @@
     </div>
 
     <!-- Versões da sessão -->
-    <div class="pointer-events-none absolute bottom-[calc(var(--dock)+36px)] left-4 top-6 z-20 flex items-center">
+    <div id="versionDock" class="pointer-events-none absolute bottom-[calc(var(--dock)+36px)] left-4 top-6 z-20 flex items-center">
       <div id="strip" class="slide-l pop pointer-events-auto max-h-full" data-open="false">
         <div class="glass rounded-[16px] p-1.5">
           <div id="railList" role="listbox" aria-label="Versões da imagem" class="no-scrollbar flex max-h-[calc(100vh-280px)] flex-col gap-2 overflow-y-auto p-1"></div>
@@ -358,13 +398,39 @@
       <button id="stack" class="relative mb-9 h-[250px] w-[460px] shrink-0 rounded-2xl" aria-label="Usar imagem de exemplo" data-tip="Usar imagem de exemplo" data-tip-pos="top">
         <span class="card c1"></span><span class="card c2"></span><span class="card c3"></span>
       </button>
-      <h1 class="relative text-center text-[28px] font-semibold leading-tight tracking-[-.025em]">Edite fotos com uma frase.</h1>
+      <h1 id="emptyTitle" class="relative text-center text-[28px] font-semibold leading-tight tracking-[-.025em]">Edite fotos com uma frase.</h1>
       <p class="relative mt-2 text-center text-[15px] text-mute">Solte uma imagem aqui, cole com <span data-kbd="mod+V" class="inline-flex align-middle"></span> ou escolha um arquivo.</p>
       <div class="relative mt-6 flex items-center gap-2">
         <button id="emptyOpen" class="btn-primary !h-9 !rounded-[11px] !px-4"><svg class="ic"><use href="#i-image-plus"/></svg>Abrir imagem<span data-kbd="mod+O" class="ml-1 flex gap-0.5 opacity-60 [&_.kbd]:!bg-black/10 [&_.kbd]:!text-inherit"></span></button>
         <button id="emptySample" class="btn-quiet !h-9 !rounded-[11px] !px-4"><svg class="ic"><use href="#i-image"/></svg>Usar exemplo</button>
       </div>
       <p class="relative mt-5 text-[11px] text-faint">PNG, JPG ou WebP · até 20 MB · <span data-kbd="mod+K" class="inline-flex align-middle"></span> para comandos</p>
+    </div>
+
+    <div id="upscaleDock" hidden>
+      <section class="upscale-panel glass" aria-labelledby="upscaleTitle">
+        <h2 id="upscaleTitle" class="text-[13px] font-semibold">Upscale generativo</h2>
+        <p id="upscaleDescription" class="upscale-copy mt-1">Reconstrói detalhes e texturas por difusão em um passo. Detalhes criados podem alterar rostos e objetos.</p>
+        <div class="upscale-options">
+          <label class="upscale-control label" for="upscaleModel">Modelo
+            <select id="upscaleModel" class="field" aria-describedby="upscaleNotice"><option value="seedvr2">SeedVR2 3B · 1 passo</option></select>
+          </label>
+          <label class="upscale-control label" for="upscaleScale">Ampliação
+            <select id="upscaleScale" class="field" aria-describedby="upscaleSize"><option value="2">2×</option><option value="4">4×</option></select>
+          </label>
+        </div>
+        <label class="upscale-copy mt-3 flex items-center gap-2"><input id="upscaleOriginal" type="checkbox" checked>Comparar usando o original</label>
+        <div class="upscale-actions">
+          <span id="upscaleSize" role="status" aria-live="polite">Abra uma foto para começar.</span>
+          <button id="upscaleOpen" class="btn-quiet"><svg class="ic"><use href="#i-image-plus"/></svg>Abrir foto</button>
+          <button id="upscaleRun" class="btn-primary" disabled><svg class="ic"><use href="#i-maximize"/></svg><span>Ampliar 2×</span></button>
+        </div>
+        <div id="upscaleProgress" hidden>
+          <div class="upscale-progress-line upscale-copy"><span id="upscaleProgressLabel">Preparando upscale</span><span id="upscaleProgressValue">0%</span></div>
+          <div id="upscaleProgressBar" role="progressbar" aria-label="Progresso do upscale" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="upscaleProgressFill"></div></div>
+        </div>
+        <p id="upscaleNotice" class="upscale-copy" role="status">SeedVR2 3B · primeiro uso: baixa 3,9 GB de modelos e prepara o motor. Depois funciona offline. GTX 1660 Ti 6 GB: validação pendente.</p>
+      </section>
     </div>
 
     <!-- Compositor -->
@@ -578,6 +644,11 @@
     </header>
     <div id="advBody" class="scroll-thin space-y-7 overflow-y-auto px-5 pb-6 pt-4">
 
+      <section id="secNotifications" aria-label="Notificações">
+        <label class="flex min-h-[44px] items-center gap-3 text-[13px] font-medium"><input id="completionNotifications" type="checkbox" class="accent-accent" aria-describedby="completionNotificationsStatus">Notificar ao concluir</label>
+        <p id="completionNotificationsStatus" class="text-[12px] leading-relaxed text-mute" role="status">Avisa quando uma edição ou um lote termina.</p>
+      </section>
+
       <section id="secEngine" aria-label="Motor local">
         <div class="flex min-h-[52px] items-center gap-3 rounded-[14px] bg-line/[.05] py-2 pl-3.5 pr-2">
           <span id="advDot" class="h-2 w-2 shrink-0 rounded-full bg-faint"></span>
@@ -675,6 +746,35 @@ const LOOKS = [
 ];
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem('spe.' + k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem('spe.' + k, JSON.stringify(v)); } catch {} };
+
+/* Notificações locais: a permissão só é solicitada em uma ação do usuário. */
+let notificationPermissionRequest = null;
+function renderCompletionNotifications() {
+  const supported = 'Notification' in window && window.isSecureContext;
+  $('#completionNotifications').checked = load('completionNotifications', true);
+  $('#completionNotifications').disabled = !supported;
+  $('#completionNotificationsStatus').textContent = !supported ? 'Este navegador não oferece notificações neste endereço.' : Notification.permission === 'denied' ? 'Notificações bloqueadas. Libere-as nas permissões deste site no navegador.' : !load('completionNotifications', true) ? 'Avisos do sistema desativados.' : Notification.permission === 'granted' ? 'Avisa ao concluir edições, upscale e lotes, mesmo em outra aba.' : 'O navegador pedirá permissão ao iniciar uma edição ou um lote.';
+}
+function prepareCompletionNotifications() {
+  if (!load('completionNotifications', true) || !('Notification' in window) || !window.isSecureContext || Notification.permission !== 'default' || notificationPermissionRequest) return;
+  try {
+    notificationPermissionRequest = Notification.requestPermission().catch(() => {}).finally(() => {
+      notificationPermissionRequest = null;
+      renderCompletionNotifications();
+    });
+  } catch { renderCompletionNotifications(); }
+}
+function notifyCompletion(title, body) {
+  if (!load('completionNotifications', true) || !('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const notification = new Notification(title, { body, tag: 'smart-photo-edit-completion' });
+    notification.onclick = () => { window.focus(); notification.close(); };
+  } catch {} // Falhas do navegador não devem transformar uma edição pronta em erro.
+}
+$('#completionNotifications').onchange = () => {
+  save('completionNotifications', $('#completionNotifications').checked);
+  prepareCompletionNotifications(); renderCompletionNotifications();
+};
 
 /* ───────────────────────── estado ───────────────────────── */
 const S = {
@@ -837,10 +937,11 @@ $('#cancelEnhance').onclick = async () => {
 $('#applySuggestion').onclick = () => { const previous = promptEl.value; setPrompt($('#suggestionText').value); $('#promptSuggestion').classList.add('hidden'); toast({ text: 'Sugestão aplicada', action: { label: 'Desfazer', icon: 'undo', run: () => setPrompt(previous) } }); };
 $('#discardSuggestion').onclick = () => { $('#promptSuggestion').classList.add('hidden'); promptEl.focus(); };
 /* O palco reserva exatamente a altura do compositor: nada pula quando ele cresce. */
-new ResizeObserver(() => {
-  const height = $('#promptDock').offsetHeight;
+const dockObserver = new ResizeObserver(() => {
+  const height = $('#promptDock').offsetHeight + $('#upscaleDock').offsetHeight;
   $('#stage').style.setProperty('--dock', height + 'px');
-}).observe($('#promptDock'));
+});
+dockObserver.observe($('#promptDock')); dockObserver.observe($('#upscaleDock'));
 new ResizeObserver(() => $('#stack').classList.toggle('hidden', $('#stage').clientHeight < 600)).observe($('#stage'));
 
 /* ───────────────────────── imagem: carregar / amostra ───────────────────────── */
@@ -864,7 +965,7 @@ async function openBlob(blob, name) {
   const next = { versions: [{ id: uid(), url, blob, w: img.naturalWidth, h: img.naturalHeight, prompt: metadata?.prompt ?? 'Original', seed: metadata?.seed, metadata, kind: metadata ? 'edit' : 'original' }], sel: 0, name: (name || 'Sem título').replace(/\.[^.]+$/, '').slice(0, 40) };
   perform({ redo: () => restore(next), undo: () => restore(prev) });
   if (prev.versions.length) toast({ text: 'Imagem substituída', action: { label: 'Desfazer', icon: 'undo', run: undo } });
-  setTimeout(() => $('#prompt').focus(), 0);
+  setTimeout(() => (S.mode === 'upscale' ? $('#upscaleRun') : $('#prompt')).focus(), 0);
 }
 function openFiles(files) {
   const f = [...files].find(isImageFile);
@@ -1063,12 +1164,14 @@ function imageSize(blob) {
 const remoteEngine = {
   name: 'ComfyUI',
   real: true,
-  async edit({ src, prompt, negative, strength, seed, n, reference, addons, mode, name, onProgress, signal }) {
+  async edit({ src, prompt, negative, strength, seed, n, reference, addons, mode, scale, upscaleModel, name, onProgress, signal }) {
     const fd = new FormData();
     fd.append('image', src.blob, 'image');
     if (reference) fd.append('reference', reference.blob, reference.name);
     const opts = { prompt, negative, n, seed: String(seed), name: name ?? S.name, source_result: src.resultId || null };
     if (mode) opts.mode = mode;
+    if (scale) opts.scale = scale;
+    if (upscaleModel) opts.upscale_model = upscaleModel;
     if (!mode && supports('strength')) opts.strength = strength;
     if (addons?.length) opts.addons = addons;
     fd.append('options', new Blob([JSON.stringify(opts)], { type: 'application/json' }));
@@ -1104,11 +1207,13 @@ const remoteEngine = {
 /* ───────────────────────── geração ───────────────────────── */
 const promptEl = $('#prompt');
 async function generate() {
+  if (S.mode === 'upscale') return generateUpscale();
   if (S.busy || promptAI.busy || !hasImg()) return;
   const prompt = promptEl.value.trim();
   if (!prompt && !S.addons.length) { nudge(); return; }
   if (promptTooLong()) { syncPrompt(); promptEl.focus(); return; }
   closePopover();
+  prepareCompletionNotifications();
   const st = { ...S.settings }, base = cur();
   const seed = st.seed !== '' ? Number(st.seed) : Math.floor(Math.random() * 1e8);
   const ctrl = new AbortController();
@@ -1124,6 +1229,7 @@ async function generate() {
     S.prompts.unshift(prompt); S.promptIdx = -1; S.lastSeed = res[0]?.seed ?? seed;
     promptEl.value = ''; S.addons = []; renderAddons(); syncPrompt();
     if (!$('#historyPanel').hidden) loadHistory(true);
+    notifyCompletion(add.length === 1 ? 'Edição pronta' : `${add.length} variações prontas`, `${S.name} · ${formatDuration(elapsed)}`);
     toast({ kind: 'success', text: `${add.length === 1 ? 'Edição pronta' : `${add.length} variações prontas`} · ${formatDuration(elapsed)} no total`, action: { label: 'Desfazer', icon: 'undo', run: undo } });
   } catch (err) {
     S.busy = null; renderBusy();
@@ -1172,6 +1278,7 @@ function renderStage() {
   });
   $('#splitUI').dataset.open = String(split);
   $('#sbs').dataset.open = String(sbs);
+  $('#stage').dataset.sbs = String(sbs);
   if (hasImg()) { const [a, b] = paneEls.map(p => p.querySelector('img')); if (a.getAttribute('src') !== S.versions[0].url) a.src = S.versions[0].url; if (b.getAttribute('src') !== cur().url) b.src = cur().url; }
   fit();
 }
@@ -1190,7 +1297,8 @@ new ResizeObserver(fit).observe($('#fitbox'));
 function renderRail() {
   const showStrip = S.versions.length > 1 || !!S.busy;
   $('#strip').dataset.open = String(showStrip);
-  const list = $('#railList'), sc = list.scrollTop;
+  $('#stage').dataset.versions = String(showStrip);
+  const list = $('#railList'), sc = list.scrollTop, sx = list.scrollLeft;
   list.innerHTML = S.versions.map((v, i) => {
     const on = i === S.sel;
     return `<div class="group/item relative">
@@ -1203,7 +1311,8 @@ function renderRail() {
   }).join('') + (S.busy ? Array.from({ length: S.busy.n }, () => `<div class="breathe h-12 w-12 shrink-0 rounded-[9px] bg-line/[.1]" aria-hidden="true"></div>`).join('') : '');
   $$('#railList .ic').forEach(s => { s.style.width = s.style.height = '10px'; });
   list.scrollTop = sc;
-  if (S.busy) list.scrollTop = list.scrollHeight;
+  list.scrollLeft = sx;
+  if (S.busy) { list.scrollTop = list.scrollHeight; list.scrollLeft = list.scrollWidth; }
 }
 $('#railList').addEventListener('click', e => {
   const del = e.target.closest('[data-del]'); if (del) { removeVersion(+del.dataset.del); return; }
@@ -1214,15 +1323,16 @@ function renderChrome() {
   const has = hasImg();
   $('#titleWrap').classList.toggle('invisible', !has);
   const dock = $('#promptDock'), showDock = has && S.mode === 'edit'; dock.classList.toggle('hidden', !showDock); dock.classList.toggle('flex', showDock);
+  renderUpscale();
   if (!has) closePops();
   const nameEl = $('#name'); if (document.activeElement !== nameEl) nameEl.value = S.name; sizeName();
   const v = cur();
   const edited = v?.kind === 'edit';
   $('#versionPrompt').classList.toggle('invisible', !edited);
   $('#executionTime').textContent = edited && Number.isFinite(v.metadata?.duration_seconds) ? ` · ${formatDuration(v.metadata.duration_seconds)}` : '';
-  const shown = edited ? (v.prompt || 'Prompt não registrado nesta imagem.') : '';
+  const shown = edited ? (v.prompt || (v.metadata?.upscale ? `${upscaleName(v.metadata.upscale.algorithm)} · reconstrução sem prompt de texto.` : 'Prompt não registrado nesta imagem.')) : '';
   $('#versionPromptText').textContent = shown; $('#versionPromptLine').textContent = shown;
-  $('#reuseVersionPrompt').disabled = !edited || !v.prompt;
+  $('#reuseVersionPrompt').disabled = !edited || !v.prompt || v.metadata?.mode === 'upscale';
   if (!edited) closePops('popFull');
 
   $('#meta').textContent = v ? `${v.w} × ${v.h} · ${v.kind === 'original' ? 'Original' : S.sel === 0 ? 'Edição salva' : `Versão ${S.sel} de ${S.versions.length - 1}`}` : '';
@@ -1249,10 +1359,17 @@ function renderBusy() {
   $('#busyLayer').dataset.open = String(!!b);
   $('#bar').dataset.busy = String(!!b);
   paintProgress(); syncPrompt(); renderRail();
+  renderUpscale();
 }
 function paintProgress() {
   const b = S.busy; if (!b) return;
   $('#busyText').textContent = `${b.phase || (b.n > 1 ? `Gerando ${b.n} variações` : 'Gerando')} · ${Math.round(b.p * 100)}% · ${formatDuration((performance.now() - b.started) / 1000)}`;
+  const percent = Math.round(Math.max(0, Math.min(1, b.p || 0)) * 100);
+  $('#upscaleProgressLabel').textContent = b.phase || 'Preparando upscale';
+  $('#upscaleProgressValue').textContent = `${percent}% · ${formatDuration((performance.now() - b.started) / 1000)}`;
+  $('#upscaleProgressBar').setAttribute('aria-valuenow', String(percent));
+  $('#upscaleProgressBar').setAttribute('aria-valuetext', `${percent}% · ${b.phase || 'Preparando upscale'}`);
+  $('#upscaleProgressFill').style.width = `${percent}%`;
 }
 function syncPrompt() {
   const el = promptEl, has = hasImg(), len = el.value.length, empty = !el.value.trim();
@@ -1415,13 +1532,13 @@ function renderHistory() {
       <div class="flex items-start gap-3">
         <button data-history-open="${esc(item.id)}" class="shrink-0 rounded-[10px] transition-transform duration-150 active:scale-95" aria-label="Abrir ${esc(item.name || 'edição')}" data-tip="Abrir imagem" data-tip-pos="top"><img src="${esc(item.thumbnail_url)}" loading="lazy" alt="" width="72" height="72" class="h-[72px] w-[72px] rounded-[10px] object-cover" style="box-shadow:0 0 0 .5px rgb(var(--line) / .2)"></button>
         <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2"><h3 class="min-w-0 truncate text-[13px] font-semibold">${esc(item.name || 'Sem título')}${item.mode === 'remove_background' ? ' <span class="chip ml-1 bg-line/[.07] align-middle text-mute">Sem fundo</span>' : ''}</h3>
+          <div class="flex items-start justify-between gap-2"><h3 class="min-w-0 truncate text-[13px] font-semibold">${esc(item.name || 'Sem título')}${item.mode === 'remove_background' ? ' <span class="chip ml-1 bg-line/[.07] align-middle text-mute">Sem fundo</span>' : item.mode === 'upscale' ? ` <span class="chip ml-1 bg-line/[.07] align-middle text-mute">Upscale ${esc(item.params?.scale || '')}×</span>` : ''}</h3>
             <span class="-mr-1 -mt-1 flex shrink-0 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
               ${item.original_url ? `<button data-history-compare="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Comparar com o original" data-tip="Comparar com o original">${icon('split', 'ic-sm')}</button>` : ''}
-              <button data-history-prompt="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Reutilizar prompt" data-tip="Reutilizar prompt" ${item.prompt ? '' : 'disabled'}>${icon('corner-up-left', 'ic-sm')}</button>
+               <button data-history-prompt="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Reutilizar prompt" data-tip="Reutilizar prompt" ${item.prompt && item.mode !== 'upscale' ? '' : 'disabled'}>${icon('corner-up-left', 'ic-sm')}</button>
               <button data-history-delete="${esc(item.id)}" class="icon-btn icon-btn-sm" aria-label="Excluir ${esc(item.name || 'edição')} do histórico" data-tip="Excluir do histórico">${icon('trash', 'ic-sm')}</button></span></div>
           <p class="mt-0.5 text-[11px] leading-snug tabular-nums text-faint">${esc(meta)}</p>
-          <p class="mt-1.5 line-clamp-3 select-text break-words text-[12px] leading-relaxed text-mute" title="${esc(item.prompt || '')}">${esc(item.prompt || 'Prompt não registrado nesta imagem.')}</p>
+          <p class="mt-1.5 line-clamp-3 select-text break-words text-[12px] leading-relaxed text-mute" title="${esc(item.prompt || '')}">${esc(item.prompt || (item.upscale ? upscaleName(item.upscale.algorithm) + ' · reconstrução sem prompt de texto.' : 'Prompt não registrado nesta imagem.'))}</p>
         </div></div>
       <div class="mt-2 flex items-center gap-2">
         <button data-history-preview="${esc(item.id)}" class="btn-quiet btn-sm" aria-haspopup="dialog">${icon('split', 'ic-sm')}Preview</button>
@@ -1446,7 +1563,7 @@ async function loadHistory(reset) {
 function showHistoryPreview(item) {
   const dialog = $('#historyPreview');
   const row = (label, value) => value == null || value === '' ? '' : `<div><dt>${esc(label)}</dt><dd>${esc(String(value))}</dd></div>`;
-  const roles = { image: 'Modelo de imagem', text_encoder: 'Codificador da foto e do texto', vae: 'VAE', vision: 'Projetor visual', turbo_lora: 'LoRA Turbo', addon: 'LoRA adicional' };
+  const roles = { image: 'Modelo de imagem', text_encoder: 'Codificador da foto e do texto', vae: 'VAE', vision: 'Projetor visual', turbo_lora: 'LoRA Turbo', addon: 'LoRA adicional', upscale: 'Modelo de upscale', controlnet: 'Guia da reconstrução' };
   const models = (item.models || []).map(m => `<li class="mt-3"><p class="font-medium">${esc(roles[m.role] || m.folder || 'Modelo')}${m.label ? ` · ${esc(m.label)}` : ''}</p><p class="mt-1 break-words text-mute">${esc(m.filename || 'Arquivo não registrado')}</p>${m.sha256 ? `<details class="mt-1 text-mute"><summary class="cursor-pointer">SHA-256</summary><code class="block break-all select-text text-[11px]">${esc(m.sha256)}</code></details>` : ''}</li>`).join('');
   const device = { cpu: 'CPU / RAM', default: 'Automático' }, memory = { low: 'Pouca VRAM', auto: 'Automática' };
   const params = Object.entries(item.params || {}).map(([key, value]) => `${key}: ${value}`).join(' · ');
@@ -1463,11 +1580,14 @@ function showHistoryPreview(item) {
     ${row('Semente', item.seed)}${row('Variação', item.variation ? `${item.variation} de ${item.variations || 1}` : null)}
     ${row('Codificador executado em', device[item.model_choices?.text_device])}${row('Memória da GPU', memory[item.model_choices?.memory])}
     ${row('Parâmetros', params)}${row('Intensidade', item.strength)}${row('Referência <image2>', item.reference?.filename)}
+    ${row('Upscale', item.upscale ? [item.upscale.precision, item.upscale.tile_size ? `bloco inicial ${item.upscale.tile_size}px` : item.upscale.vae_tile ? `VAE em blocos de ${item.upscale.vae_tile}px` : null, item.upscale.tile_pad ? `contexto ${item.upscale.tile_pad}px` : null, item.upscale.assembly_device === 'cpu' ? 'montagem na CPU' : null].filter(Boolean).join(' · ') : null)}
+    ${row('Reconstrução generativa', item.upscale ? [`${item.upscale.steps} passo(s)`, item.upscale.reconstruction ? ({subtle:'Suave', balanced:'Equilibrada', strong:'Forte', fixed:'configuração padrão'})[item.upscale.reconstruction] || item.upscale.reconstruction : null, item.upscale.denoise != null ? `denoise ${item.upscale.denoise}` : null, item.upscale.tile_overlap ? `sobreposição ${item.upscale.tile_overlap}px${item.upscale.tile_units === 'input_pixels' ? ' da entrada' : ''}` : null].filter(Boolean).join(' · ') : null)}
+    ${row('Escala nativa', item.upscale?.downsample_from_4x ? `${upscaleName(item.upscale.algorithm)} gera 4× e reduz para 2×` : null)}
     ${row('Complementos', (item.addons || []).map(a => a.id).join(', '))}
     ${row('Prompt negativo', item.negative)}
   </dl>
   <section class="mt-5 border-t border-line/[.08] pt-4 text-[12px] leading-relaxed"><h3 class="font-semibold">Modelos usados</h3>${models ? `<ul class="select-text">${models}</ul>` : '<p class="mt-2 text-mute">Os modelos não foram registrados nesta edição antiga.</p>'}</section>
-  <section class="mt-5 border-t border-line/[.08] pt-4 text-[12px] leading-relaxed"><h3 class="font-semibold">Prompt enviado ao workflow</h3><p class="mt-2 select-text whitespace-pre-wrap break-words">${esc(item.prompt || 'Prompt não registrado.')}</p></section>`;
+  <section class="mt-5 border-t border-line/[.08] pt-4 text-[12px] leading-relaxed"><h3 class="font-semibold">Prompt enviado ao workflow</h3><p class="mt-2 select-text whitespace-pre-wrap break-words">${esc(item.prompt || (item.upscale?.algorithm === 'sinsr' ? 'SinSR reconstrói a foto sem prompt de texto.' : 'Prompt não registrado.'))}</p></section>`;
   $('#historyPreviewContent').scrollTop = 0;
   $$('#historyPreviewContent img').forEach(img => img.addEventListener('error', () => {
     const message = document.createElement('p'); message.className = 'text-[12px] text-danger'; message.textContent = 'Não foi possível carregar esta imagem.'; img.replaceWith(message);
@@ -1609,6 +1729,7 @@ const commands = () => {
   const has = hasImg();
   return [
     { g: 'Modo', label: S.mode === 'bg' ? 'Voltar para Editar' : 'Remover fundo de várias fotos', icon: S.mode === 'bg' ? 'wand' : 'scissors', keys: S.mode === 'bg' ? 'alt+1' : 'alt+2', run: () => setMode(S.mode === 'bg' ? 'edit' : 'bg') },
+    { g: 'Modo', label: 'Ampliar foto com IA', icon: 'maximize', keys: 'alt+3', run: () => setMode('upscale') },
     ...(S.mode === 'bg' ? [{ g: 'Remover fundo', label: 'Adicionar fotos…', icon: 'image-plus', keys: 'mod+O', run: bgPick }, { g: 'Remover fundo', label: 'Adicionar pasta…', icon: 'folder', run: bgPickFolder }] : []),
     { g: 'Arquivo', label: 'Abrir imagem…', icon: 'image-plus', keys: 'mod+O', run: pickFile },
     { g: 'Arquivo', label: 'Usar imagem de exemplo', icon: 'image', run: loadSample },
@@ -1678,7 +1799,7 @@ addEventListener('keydown', e => {
   if (mod && k === ',') { e.preventDefault(); advOpen() ? closeAdv() : openAdv(); return; }
   if (mod && k === 'k' && !advOpen()) { e.preventDefault(); palOpen() ? closePalette() : openPalette(); return; }
   if (palOpen() || advOpen()) return;
-  if (e.altKey && (e.key === '1' || e.key === '2' || e.code === 'Digit1' || e.code === 'Digit2')) { e.preventDefault(); setMode(e.code === 'Digit2' || e.key === '2' ? 'bg' : 'edit'); return; }
+  if (e.altKey && ['1', '2', '3', 'Digit1', 'Digit2', 'Digit3'].some(k => k === e.key || k === e.code)) { e.preventDefault(); setMode(e.code === 'Digit3' || e.key === '3' ? 'upscale' : e.code === 'Digit2' || e.key === '2' ? 'bg' : 'edit'); return; }
   if (S.mode === 'bg') {
     if (mod && k === 'o') { e.preventDefault(); bgPick(); }
     else if (e.key === 'Escape' && BG.running) { e.preventDefault(); runBatch(); }
@@ -1698,8 +1819,8 @@ addEventListener('keydown', e => {
   else if (sbsOn() && (e.key === '-' || e.key === '_')) { e.preventDefault(); zoomStep(1 / 1.5); }
   else if (sbsOn() && e.key === '0') { e.preventDefault(); resetView(); }
   else if (k === '/' && hasImg()) { e.preventDefault(); promptEl.focus(); }
-  else if (e.key === 'ArrowUp' || e.key === '[') { e.preventDefault(); select(S.sel - 1, document.activeElement.closest('#railList')); }
-  else if (e.key === 'ArrowDown' || e.key === ']') { e.preventDefault(); select(S.sel + 1, document.activeElement.closest('#railList')); }
+  else if (e.key === 'ArrowUp' || e.key === '[' || (e.key === 'ArrowLeft' && document.activeElement.closest('#railList'))) { e.preventDefault(); select(S.sel - 1, document.activeElement.closest('#railList')); }
+  else if (e.key === 'ArrowDown' || e.key === ']' || (e.key === 'ArrowRight' && document.activeElement.closest('#railList'))) { e.preventDefault(); select(S.sel + 1, document.activeElement.closest('#railList')); }
 });
 
 /* colar, arrastar */
@@ -1731,7 +1852,7 @@ async function refreshStatus() {
   if (!wasOnline && R.status?.comfy?.online) refreshChecks();
   // Ao terminar (ou cancelar) um preparo, o que já está no disco mudou.
   if (wasPreparing && !preparing()) { try { await loadWorkflows(); } catch {} }
-  renderEngine(); if (advOpen()) { renderAdvStatus(); renderModelOptions(); }
+  renderEngine(); renderUpscale(); if (advOpen()) { renderAdvStatus(); renderModelOptions(); }
   clearTimeout(fastPoll);
   if (advOpen() && preparing()) fastPoll = setTimeout(refreshStatus, 1000);
 }
@@ -1832,6 +1953,9 @@ function renderModelOptions() {
   if (focusedProfile && !document.activeElement?.dataset?.profile) $(`#profileList [data-profile="${focusedProfile}"]`)?.focus();
 
   const p = spec.profiles.find(x => x.id === sel), missing = p ? p.missing_bytes : spec.missing_bytes;
+  const wf = activeWf(), resolution = R.values[wf.id]?.resolution ?? wf.params.find(x => x.key === 'resolution')?.default;
+  const profileResolution = sel === 'original' ? 1024 : 768;
+  const customResolution = !!p && resolution != null && resolution !== profileResolution;
   const c = R.status?.comfy, dl = c?.download;
   let action = '';
   if (preparing()) {
@@ -1854,6 +1978,8 @@ function renderModelOptions() {
   const list = p ? p.models : null;
   const html = `<div class="rounded-[14px] bg-line/[.05] p-3.5">
     <p class="text-[12px] leading-relaxed text-mute">${esc(p ? p.summary : 'Combinação de modelos definida antes desta versão. Escolha um perfil para voltar ao catálogo.')}</p>
+    ${resolution != null ? `<p class="mt-2 text-[12px] leading-relaxed text-mute">Resolução atual: <span class="font-medium text-ink">${esc(resolution)} px</span>${customResolution ? `. O perfil usa ${profileResolution} px por padrão; resoluções maiores aumentam tempo e memória.` : '.'}</p>` : ''}
+    ${customResolution ? `<button class="btn-quiet btn-sm mt-2" data-act="reset-resolution" ${locked ? 'disabled' : ''}>Usar ${profileResolution} px do perfil</button>` : ''}
     ${action}
     ${list ? `<details class="disclosure mt-3 border-t border-line/[.08] pt-2.5" ${profDetails ? 'open' : ''}>
       <summary class="text-[12px] font-medium text-mute hover:text-ink">${icon('layers', 'ic-sm')}Modelos usados</summary>
@@ -1901,6 +2027,10 @@ $('#profileList').addEventListener('keydown', e => {
 $('#profileInfo').addEventListener('click', e => {
   const a = e.target.closest('[data-act]')?.dataset.act;
   if (a === 'download') startEngine(); else if (a === 'cancel') cancelEngine();
+  else if (a === 'reset-resolution' && !savingModels && !S.busy && !preparing()) {
+    const id = currentPreset(activeWf()?.model_options);
+    if (id) { setParam('resolution', id === 'original' ? 1024 : 768); renderWfParams(); }
+  }
 });
 $('#profileInfo').addEventListener('toggle', e => { if (e.target.matches('details')) profDetails = e.target.open; }, true);
 
@@ -1926,6 +2056,7 @@ let paramSaveTimer;
 function setParam(key, value) {
   const wf = activeWf(); if (!wf) return;
   (R.values[wf.id] ||= {})[key] = value;
+  if (key === 'resolution') renderModelOptions();
   clearTimeout(paramSaveTimer);
   paramSaveTimer = setTimeout(() => api('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow_params: { [wf.id]: { [key]: value } } }) })
     .catch(e => toast({ kind: 'error', text: e.message })), 250);
@@ -2032,7 +2163,7 @@ async function openAdv() {
   }
   note?.remove(); ['secEngine', 'secWf'].forEach(id => $('#' + id).classList.remove('hidden'));
   try { advSettings = await api('/api/settings'); } catch { advSettings = {}; }
-  renderAdvStatus(); renderWfList(); renderWfParams(); renderModelOptions();
+  renderCompletionNotifications(); renderAdvStatus(); renderWfList(); renderWfParams(); renderModelOptions();
   setTimeout(() => ($('#profileList [aria-checked="true"]') || $('#wfList [aria-checked="true"]') || $('#advClose')).focus(), 0);
   await Promise.all([refreshStatus(), loadWorkflows().then(renderModelOptions).catch(() => {})]); refreshChecks();
 }
@@ -2046,23 +2177,101 @@ $('#popAdv').onclick = openAdv;
 async function bootRemote() {
   try { R.status = await api('/api/status'); R.remote = true; engine = remoteEngine; await loadWorkflows(); }
   catch { R.remote = false; engine = demoEngine; }
-  renderEngine(); applySupports(); renderLooks(); renderBatch();
+  if (R.remote) await loadUpscaleModels();
+  renderEngine(); applySupports(); renderLooks(); renderBatch(); renderUpscale();
   if (R.remote) setInterval(() => { if (!document.hidden) refreshStatus(); }, 5000);
 }
 
 /* ───────────────────────── modo: remover fundo (lote) ───────────────────────── */
 const BG = { items: [], running: false, ctrl: null, max: 200 };
+const UPSCALE_NAMES = { seedvr2: 'SeedVR2', adcsr: 'AdcSR', sinsr: 'SinSR', sd15_tile: 'SD 1.5 + ControlNet Tile', pisa: 'PiSA-SR' };
+function upscaleName(id) { return UPSCALE_NAMES[id] || id || 'Upscale'; }
 const BG_LABEL = 'Remover fundo (BiRefNet)';
 function setMode(m) {
+  if (S.busy || BG.running || promptAI.busy) { toast({ text: 'Espere ou cancele a operação atual para trocar de modo.' }); return; }
   if (m === 'bg' && !hasImg()) { /* ok: o modo não depende da imagem aberta */ }
   S.mode = m; $('#app').dataset.mode = m;
+  $('#emptyTitle').textContent = m === 'upscale' ? 'Amplie sua foto com IA.' : 'Edite fotos com uma frase.';
   const bg = m === 'bg', view = $('#bgView');
   view.classList.toggle('hidden', !bg); view.classList.toggle('flex', bg);
   ['#promptDock', '#strip', '#fitbox', '#empty'].forEach(sel => { $(sel).inert = bg; });
-  $('#modeEdit').setAttribute('aria-pressed', String(!bg)); $('#modeBg').setAttribute('aria-pressed', String(bg));
+  $('#modeEdit').setAttribute('aria-pressed', String(m === 'edit')); $('#modeBg').setAttribute('aria-pressed', String(bg)); $('#modeUpscale').setAttribute('aria-pressed', String(m === 'upscale'));
   closePops(); renderChrome(); renderBatch();
 }
-$('#modeEdit').onclick = () => setMode('edit'); $('#modeBg').onclick = () => setMode('bg');
+$('#modeEdit').onclick = () => setMode('edit'); $('#modeBg').onclick = () => setMode('bg'); $('#modeUpscale').onclick = () => setMode('upscale');
+
+let upscaleModels = [], upscaleCatalogError = '';
+async function loadUpscaleModels() {
+  try {
+    const data = await api('/api/upscale/models');
+    upscaleModels = data.models; upscaleCatalogError = '';
+    const selected = $('#upscaleModel').value, remembered = load('upscale.model', data.default);
+    $('#upscaleModel').innerHTML = upscaleModels.map(m => `<option value="${esc(m.id)}">${esc(m.label)}</option>`).join('');
+    $('#upscaleModel').value = upscaleModels.some(m => m.id === remembered) ? remembered : selected;
+    if (!$('#upscaleModel').value) $('#upscaleModel').value = data.default;
+  } catch { upscaleCatalogError = 'Não consegui carregar os modelos de upscale. Reinicie o app e recarregue a página.'; }
+  renderUpscale();
+}
+function upscaleBase() { return $('#upscaleOriginal').checked ? S.versions[0] : cur(); }
+function renderUpscale() {
+  $('#upscaleDock').hidden = S.mode !== 'upscale';
+  const scale = Number($('#upscaleScale').value), v = upscaleBase(), busy = !!S.busy;
+  const progress = $('#upscaleProgress'), revealProgress = busy && progress.hidden;
+  progress.hidden = !busy;
+  if (revealProgress) requestAnimationFrame(() => {
+    if (!S.busy || S.mode !== 'upscale') return;
+    const panel = progress.closest('.upscale-panel');
+    panel.scrollTop += Math.max(0, progress.getBoundingClientRect().bottom - panel.getBoundingClientRect().bottom + 16);
+  });
+  const model = upscaleModels.find(m => m.id === $('#upscaleModel').value);
+  const limit = model?.max_output_pixels ?? 32000000;
+  const tooLarge = v && v.w * v.h * scale * scale > limit;
+  $('#upscaleSize').textContent = v ? `${v.w} × ${v.h} → ${v.w * scale} × ${v.h * scale}` : 'Abra uma foto para começar.';
+  $('#upscaleScale').disabled = busy;
+  $('#upscaleModel').disabled = busy || !upscaleModels.length;
+  $('#upscaleOriginal').disabled = busy;
+  $('#upscaleDescription').textContent = model ? `${model.description} Detalhes criados podem diferir do original.` : 'Reconstrói detalhes por difusão em um passo.';
+  $('#upscaleOpen').disabled = busy;
+  const run = $('#upscaleRun');
+  run.disabled = !busy && (!v || !R.remote || !model || R.status?.comfy?.managed === false || tooLarge || promptAI.busy || BG.running);
+  run.querySelector('span').textContent = busy ? 'Parar' : `Ampliar ${scale}×`;
+  run.querySelector('use').setAttribute('href', busy ? '#i-square' : '#i-maximize');
+  const size = model ? (model.size_bytes / 1e9).toLocaleString('pt-BR', {maximumFractionDigits:2}) + ' GB' : '';
+  const ready = model?.downloaded ? 'Pesos baixados; funciona offline.' : `Primeiro uso: baixa ${size} de pesos e prepara o motor para uso offline.`;
+  const native = model?.native_scale === 4 && scale === 2 ? ' Gera 4× e reduz para 2×.' : '';
+  $('#upscaleNotice').textContent = !R.remote ? 'Upscale requer o app local. Inicie o servidor para usar o modelo de IA.' : R.status?.comfy?.managed === false ? 'Selecione o motor local gerenciado nas configurações para usar Upscale.' : upscaleCatalogError ? upscaleCatalogError : tooLarge ? `A saída ultrapassa ${Math.floor(limit / 1e6)} megapixels neste modelo. Escolha 2×, outro modelo ou abra uma foto menor.` : busy ? 'Parar cancela a ampliação; o preparo inicial continua para o próximo uso.' : `${ready}${native} GTX 1660 Ti: validação pendente.`;
+}
+$('#upscaleModel').onchange = () => { save('upscale.model', $('#upscaleModel').value); renderUpscale(); };
+$('#upscaleOriginal').onchange = renderUpscale;
+$('#upscaleScale').onchange = renderUpscale;
+$('#upscaleOpen').onclick = pickFile;
+$('#upscaleRun').onclick = () => S.busy ? cancelBusy() : generateUpscale();
+
+async function generateUpscale() {
+  renderUpscale();
+  if ($('#upscaleRun').disabled || S.busy || !hasImg()) return;
+  prepareCompletionNotifications();
+  const base = upscaleBase(), scale = Number($('#upscaleScale').value), upscaleModel = $('#upscaleModel').value, ctrl = new AbortController();
+  const busy = S.busy = { n: 1, p: 0, ctrl, started: performance.now(), phase: 'Preparando upscale' }; renderBusy();
+  try {
+    const [r] = await remoteEngine.edit({ src: base, mode: 'upscale', scale, upscaleModel, n: 1, signal: ctrl.signal, onProgress: (p, phase) => { if (S.busy === busy) { busy.p = p; busy.phase = phase; paintProgress(); } } });
+    if (ctrl.signal.aborted || S.busy !== busy) return;
+    const elapsed = (performance.now() - busy.started) / 1000;
+    const version = { id: uid(), url: URL.createObjectURL(r.blob), blob: r.blob, w: r.w, h: r.h, prompt: r.metadata.prompt, seed: r.seed, metadata: r.metadata, resultId: r.resultId, kind: 'edit' };
+    S.busy = null;
+    const selectedModel = upscaleModels.find(m => m.id === upscaleModel);
+    if (selectedModel) selectedModel.downloaded = true;
+    const at = S.versions.length, prevSel = S.sel;
+    perform({ redo: () => { S.versions.push(version); S.sel = at; }, undo: () => { S.versions.splice(at, 1); S.sel = prevSel; } });
+    if (!$('#historyPanel').hidden) loadHistory(true);
+    notifyCompletion(`Upscale ${scale}× pronto`, `${S.name} · ${formatDuration(elapsed)}`);
+    toast({ kind: 'success', text: `Upscale ${scale}× pronto · ${formatDuration(elapsed)}`, action: { label: 'Desfazer', icon: 'undo', run: undo } });
+  } catch (err) {
+    if (S.busy !== busy) return;
+    S.busy = null; renderBusy();
+    toast({ kind: err.name === 'AbortError' ? undefined : 'error', text: err.name === 'AbortError' ? 'Upscale cancelado.' : err.message || 'Não foi possível ampliar. Tente novamente.', duration: 10000 });
+  }
+}
 
 async function thumbOf(blob, max = 360) {
   try {
@@ -2152,6 +2361,8 @@ function paintBatchProgress(it) { const el = $(`#bgp-${it.id}`); if (el) el.text
 
 async function runBatch() {
   if (BG.running) { BG.ctrl?.abort(); BG.stop = true; renderBatch(); return; }
+  prepareCompletionNotifications();
+  let completed = 0, failed = 0;
   BG.running = true; BG.stop = false; BG.items.filter(i => i.status === 'error').forEach(i => { i.status = 'queued'; i.error = ''; });
   renderBatch();
   for (const it of BG.items) {
@@ -2161,9 +2372,10 @@ async function runBatch() {
     try {
       const [r] = await remoteEngine.edit({ src: { blob: it.file }, prompt: BG_LABEL, negative: '', seed: 0, n: 1, mode: 'remove_background', name: it.name, signal: BG.ctrl.signal,
         onProgress: (p, phase) => { it.p = p; it.phase = phase; paintBatchProgress(it); } });
-      it.result = r; it.status = 'done'; it.resThumb = await thumbOf(r.blob);
+      it.result = r; it.status = 'done'; it.resThumb = await thumbOf(r.blob); completed++;
     } catch (err) {
       if (err.name === 'AbortError') { it.status = 'queued'; break; }
+      failed++;
       it.status = 'error'; it.error = err instanceof EngineError ? err.message : 'Não foi possível remover o fundo.';
       if (['comfy_offline', 'engine_setup_failed', 'launch_failed', 'app_offline'].includes(err.code)) { renderBatch(); toast({ kind: 'error', text: err.message, action: { label: 'Configurar', icon: 'settings', run: () => openAdv() }, duration: 10000 }); break; }
     }
@@ -2171,6 +2383,7 @@ async function runBatch() {
   }
   BG.running = false; BG.ctrl = null; renderBatch();
   const c = bgCounts();
+  if (!BG.stop && !c.queued && !c.running && completed + failed) notifyCompletion('Lote de remoção de fundos concluído', `${completed} foto${completed === 1 ? '' : 's'} pronta${completed === 1 ? '' : 's'}${failed ? ` · ${failed} com erro` : ''}`);
   if (!BG.stop && c.done) toast({ kind: 'success', text: `${c.done} fundo${c.done > 1 ? 's removidos' : ' removido'}${c.error ? ` · ${c.error} com erro` : ''}`, action: c.done > 1 ? { label: 'Exportar ZIP', icon: 'download', run: exportBatch } : undefined });
   else if (BG.stop) toast({ text: 'Lote interrompido. As fotos prontas continuam na lista e no histórico.' });
 }
@@ -2196,10 +2409,15 @@ $('#bgClear').onclick = () => { const stash = BG.items; BG.items = []; renderBat
 async function openCompare(original, result, name, meta) {
   const [a, b] = await Promise.all([imageSize(original), imageSize(result)]);
   const mk = (blob, size, extra) => ({ id: uid(), url: URL.createObjectURL(blob), blob, w: size.w, h: size.h, prompt: 'Original', seed: undefined, ...extra });
-  const versions = [mk(original, a, { kind: 'original' }), mk(result, b, { kind: 'edit', prompt: meta?.prompt || BG_LABEL, seed: meta?.seed, metadata: meta, resultId: meta?.id || meta?.resultId })];
+  const versions = [mk(original, a, { kind: 'original' }), mk(result, b, { kind: 'edit', prompt: meta?.prompt ?? (meta?.mode === 'upscale' ? '' : BG_LABEL), seed: meta?.seed, metadata: meta, resultId: meta?.id || meta?.resultId })];
   const previous = snapshot(), next = { versions, sel: 1, name: name || 'Sem título' };
   perform({ redo: () => restore(next), undo: () => restore(previous) });
-  setMode('edit'); S.split = true; S.sbs = false; renderStage(); renderChrome();
+  if (meta?.mode === 'upscale') {
+    const algorithm = meta.upscale?.algorithm;
+    if (upscaleModels.some(m => m.id === algorithm)) { $('#upscaleModel').value = algorithm; save('upscale.model', algorithm); }
+    if ([2, 4].includes(meta.upscale?.scale)) $('#upscaleScale').value = String(meta.upscale.scale);
+  }
+  setMode(meta?.mode === 'upscale' ? 'upscale' : 'edit'); S.split = true; S.sbs = false; renderStage(); renderChrome();
 }
 $('#bgGrid').addEventListener('click', async e => {
   const b = e.target.closest('[data-bg]'), card = e.target.closest('[data-id]'); if (!b || !card) return;

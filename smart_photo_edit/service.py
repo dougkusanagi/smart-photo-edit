@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, AsyncIterator
 
 from .history import ResultStore
-from . import background
+from . import background, upscale
 from .prompt_limits import effective_prompt, validate_prompt
 from .comfy import Cancelled, ComfyClient, ComfyError
 from .workflows import Workflow, WorkflowError
@@ -44,7 +44,7 @@ class EditRequest:
             validate_prompt(self.negative)
         except ValueError as exc:
             raise WorkflowError(str(exc)) from exc
-        if not self.prompt.strip() and not self.prompt_prefix.strip():
+        if self.mode != upscale.MODE and not self.prompt.strip() and not self.prompt_prefix.strip():
             raise WorkflowError("Descreva a edição antes de gerar.")
         if self.reference is not None and not sniff_image(self.reference):
             raise WorkflowError('Referência inválida: use PNG, JPG ou WebP.')
@@ -129,6 +129,14 @@ async def run_edit(
                     data = await asyncio.to_thread(background.apply_alpha, req.image, data)
                 except (OSError, ValueError) as exc:
                     raise ComfyError('Não consegui aplicar a transparência à foto original: ' + str(exc), 'invalid_background_result') from exc
+            if req.mode == upscale.MODE:
+                try:
+                    data = await asyncio.to_thread(upscale.finish, req.image, data, chosen_params['scale'],
+                                            getattr(wf, 'upscale_model', upscale.DEFAULT_MODEL))
+                except (OSError, ValueError, SyntaxError) as exc:
+                    raise ComfyError('Não consegui finalizar o upscale: ' + str(exc), 'invalid_upscale_result') from exc
+                if cancel_event.is_set():
+                    raise Cancelled()
             metadata = {
                 'duration_seconds': round(time.monotonic() - execution_started, 3),
                 'prompt': sent_prompt, 'user_prompt': req.prompt.strip(),
@@ -142,6 +150,31 @@ async def run_edit(
                 'name': req.source_name[:60], 'source_result': req.source_result, 'mode': req.mode,
                 'addons': [{'id': m['addon'], 'filename': m['filename'], 'sha256': m.get('sha256')} for m in wf.requires.get('models', []) if m.get('addon')],
             }
+            if req.mode == upscale.MODE:
+                model = getattr(wf, 'upscale_model', upscale.DEFAULT_MODEL)
+                scale = chosen_params['scale']
+                common = {'algorithm': model, 'scale': scale, 'method': 'one_step_diffusion', 'steps': 1,
+                          'max_output_pixels': upscale.max_pixels(model), 'node_cache': 'disabled'}
+                if model == 'seedvr2':
+                    metadata['upscale'] = {**common, 'precision': 'UNet FP8 (e4m3fn) / VAE FP16',
+                                           'cfg': 1, 'sampler': 'euler', 'scheduler': 'simple',
+                                           'color_correction': 'lab', 'vae_tile': 512, 'vae_tile_overlap': 128,
+                                           'resize': 'lanczos_before_restoration', 'native_nodes': True}
+                else:
+                    metadata['upscale'] = {
+                        **common, 'precision': 'UNet FP32 / VAE auto' if model == 'sinsr' else 'FP32',
+                        'assembly_device': 'cpu', 'noise': 'global_cpu' if model == 'sinsr' else 'none', 'native_scale': 4,
+                        'downsample_from_4x': scale == 2, 'cpu_threads_limit': 4,
+                        'tile_size': 128 if model == 'sinsr' else 192, 'tile_pad': 32, 'tile_overlap': 32, 'tile_units': 'input_pixels',
+                        'tile_size_is_initial': True, 'oom_retry_min_tile': 64,
+                    }
+                    if model == 'sinsr':
+                        metadata['upscale'].update(vae_attention='query_chunks', attention_max_score_bytes=32*1024**2,
+                                                   vae_device='auto', vae_device_policy='cuda_then_smaller_tiles_then_cpu',
+                                                   vae_precision_policy='fp16_cuda_with_fp32_fallback')
+                    else:
+                        metadata['upscale'].update(color_alignment='adain_global', deterministic=True,
+                                                   text_encoder='none', vae_device='same_as_model')
             try:
                 rid = await asyncio.to_thread(store.save, data, metadata, req.image)
             except (OSError, ValueError) as exc:

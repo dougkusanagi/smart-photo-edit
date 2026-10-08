@@ -1,0 +1,126 @@
+{
+  "seedvr2": {
+    "label": "SeedVR2 3B · 1 passo",
+    "description": "Restauração de um passo da ByteDance, sem prompt. Opção para reconstruir detalhes; experimental.",
+    "license": "Apache-2.0",
+    "license_url": "https://huggingface.co/ByteDance-Seed/SeedVR2-3B",
+    "max_output_pixels": 8000000,
+    "models": [
+      {
+        "folder": "diffusion_models",
+        "filename": "seedvr2_3b_fp8_e4m3fn.safetensors",
+        "label": "SeedVR2 3B",
+        "role": "image",
+        "family": "seedvr2",
+        "format": "FP8 (e4m3fn)",
+        "url": "https://huggingface.co/Comfy-Org/SeedVR2/resolve/df48879708206a403d2a61acd55578c2e80fd233/diffusion_models/seedvr2_3b_fp8_e4m3fn.safetensors",
+        "size_bytes": 3392794232,
+        "sha256": "a0226eaa2c3e6f47ae5ce83225120f16479da890ced1a3bc32b1a14619787914"
+      },
+      {
+        "folder": "vae",
+        "filename": "seedvr2_ema_vae_fp16.safetensors",
+        "label": "SeedVR2 · VAE",
+        "role": "vae",
+        "family": "seedvr2",
+        "format": "FP16",
+        "url": "https://huggingface.co/Comfy-Org/SeedVR2/resolve/df48879708206a403d2a61acd55578c2e80fd233/vae/seedvr2_ema_vae_fp16.safetensors",
+        "size_bytes": 501324814,
+        "sha256": "20678548f420d98d26f11442d3528f8b8c94e57ee046ef93dbb7633da8612ca1"
+      }
+    ]
+  },
+  "adcsr": {
+    "label": "AdcSR · 1 passo",
+    "description": "Rede comprimida para priorizar velocidade, sem prompt. 4× nativo; experimental.",
+    "license": "Apache-2.0 (estrutura SD 2.1: OpenRAIL++)",
+    "license_url": "https://huggingface.co/Guaishou74851/AdcSR/blob/4c6033e140e891da6c16fe3cdaa432836e53e4d3/LICENSE",
+    "native_scale": 4,
+    "models": [
+      {
+        "folder": "upscale/adcsr",
+        "filename": "net_params_200.pkl",
+        "label": "AdcSR · rede podada",
+        "role": "image",
+        "family": "adcsr",
+        "format": "FP32",
+        "url": "https://huggingface.co/Guaishou74851/AdcSR/resolve/4c6033e140e891da6c16fe3cdaa432836e53e4d3/weight/net_params_200.pkl",
+        "size_bytes": 1785646934,
+        "sha256": "87fc2d3b2a007ebd568065f77b1a90fe6c10570408a38b7d72b28e6a16946111"
+      },
+      {
+        "folder": "upscale/adcsr",
+        "filename": "halfDecoder.ckpt",
+        "label": "AdcSR · meio decodificador",
+        "role": "vae",
+        "family": "adcsr",
+        "format": "FP32",
+        "url": "https://huggingface.co/Guaishou74851/AdcSR/resolve/4c6033e140e891da6c16fe3cdaa432836e53e4d3/weight/pretrained/halfDecoder.ckpt",
+        "size_bytes": 377612294,
+        "sha256": "60c8763a8f7e79a9956cb6e0c5dd813deb5f54ef43b3665fce880acc718e5032"
+      },
+      {
+        "folder": "upscale/adcsr/unet",
+        "filename": "config.json",
+        "label": "AdcSR · estrutura do UNet (SD 2.1)",
+        "role": "image",
+        "family": "adcsr",
+        "format": "configuração",
+        "url": "https://huggingface.co/sd2-community/stable-diffusion-2-1-base/resolve/4e63672c03103b6c636b8fb4119ba982469b2955/unet/config.json",
+        "sha256": "ce0c6d379e3b1d3e1f79338de70c80a1e36f17a6372439a8249b6fb0dfa1b608",
+        "size_bytes": 911
+      }
+    ],
+    "engine_packages": [
+      "diffusers==0.41.0"
+    ]
+  },
+  "sinsr": {
+    "label": "SinSR · 1 passo",
+    "description": "Difusão dedicada a upscale. Reconstrução fixa, sem prompt. Experimental; uso não comercial.",
+    "license": "CC-BY-NC-SA-4.0",
+    "license_url": "https://github.com/wyf0912/SinSR/blob/f1735490e980162435391162ddd18c0642327c5b/LICENSE",
+    "models": [
+      {
+        "folder": "upscale",
+        "filename": "SinSR_v1.pth",
+        "label": "SinSR v1",
+        "role": "image",
+        "family": "sinsr",
+        "format": "FP32",
+        "url": "https://github.com/wyf0912/SinSR/releases/download/v1.0/SinSR_v1.pth",
+        "size_bytes": 477910858,
+        "sha256": "a3898498db2a99f20754a23a55240746800ecbc6b808c5389e794ec2022db6a4"
+      },
+      {
+        "folder": "upscale",
+        "filename": "autoencoder_vq_f4.pth",
+        "label": "SinSR · VQ autoencoder",
+        "role": "vae",
+        "family": "sinsr",
+        "format": "FP32",
+        "url": "https://github.com/zsyOAOA/ResShift/releases/download/v2.0/autoencoder_vq_f4.pth",
+        "size_bytes": 221364711,
+        "sha256": "e967eaa2c380152811c53e312990d6967a8a957c4f7590f19490ec72110b2889"
+      }
+    ],
+    "libraries": [
+      {
+        "name": "sinsr",
+        "revision": "f1735490e980162435391162ddd18c0642327c5b",
+        "url": "https://github.com/wyf0912/SinSR/archive/f1735490e980162435391162ddd18c0642327c5b.zip",
+        "sha256": "49a03109f86e873535d1d03b5de5386cfc738749e362831f12c4d4dcacfe5c5b",
+        "namespace": "spe_sinsr",
+        "include": [
+          "models",
+          "ldm",
+          "LICENSE"
+        ]
+      }
+    ],
+    "engine_packages": [
+      "timm==1.0.30"
+    ],
+    "native_scale": 4
+  }
+}

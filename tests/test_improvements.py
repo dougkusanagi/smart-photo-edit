@@ -8,6 +8,7 @@ from aiohttp import FormData
 from smart_photo_edit import workflows, models
 from smart_photo_edit.prompt_ai import PromptEnhancer
 from .test_server import make_env, read_events
+from .conftest import make_png
 
 
 @pytest.mark.parametrize('wf_id', ['qwen21-base', 'qwen21-viggle-turbo'])
@@ -46,6 +47,44 @@ def test_reference_not_added_without_request_and_imported_workflows_are_rejected
     wf.source = 'user'
     with pytest.raises(workflows.WorkflowError, match='segunda referência'):
         wf.apply(image_name='source.png', prompt='edit', reference_name='reference.png')
+
+
+async def test_distinct_reference_with_addon_and_merged_turbo_preserves_request(make_env, png, monkeypatch):
+    env = await make_env()
+    env.state.settings.engine_mode = 'managed'
+    env.state.runtime.url = env.state.settings.comfy_url
+    monkeypatch.setattr(env.state.runtime, 'ensure', AsyncMock(return_value=True))
+    monkeypatch.setattr(env.state.runtime, 'ensure_addons', AsyncMock(return_value=True))
+    wf_id = 'qwen21-viggle-turbo'
+    env.state.settings.model_choices[wf_id] = models.presets(wf_id)['compact']
+    env.state.settings.workflow_params[wf_id] = {'resolution': 768}
+    reference = make_png(color=(30, 150, 240), size=(48, 64))
+    prompt = 'Substitua a pessoa de <image1> pela pessoa de <image2>, mantendo o cenário.'
+    form = FormData()
+    form.add_field('image', png, filename='praia.png', content_type='image/png')
+    form.add_field('reference', reference, filename='pessoa.png', content_type='image/png')
+    form.add_field('options', json.dumps({'prompt': prompt, 'addons': ['light-blend'], 'seed': 84001916}), content_type='application/json')
+    events = await read_events(await env.http.post('/api/edit', data=form))
+    assert events[-1]['type'] == 'done'
+    item = events[-1]['images'][0]
+    phases = [e['phase'] for e in events if e['type'] == 'progress']
+    assert 'Preparando imagens e instrução na CPU' in phases
+    assert 'Finalizando imagem' in phases
+    assert not any('5/12' in phase for phase in phases)
+    graph = next(iter(env.comfy.prompts.values()))
+    assert [u['bytes'] for u in env.comfy.uploads] == [png, reference]
+    assert graph['7']['inputs']['images.image_1'] == ['6', 0]
+    assert graph['7']['inputs']['images.image_2'] == ['_spe_reference', 0]
+    assert graph['6']['inputs']['image'] != graph['_spe_reference']['inputs']['image']
+    assert not any(n['class_type'] == 'ViggleTurboLora' for n in graph.values())
+    assert graph['_spe_addon_light-blend']['inputs']['model'] == ['1', 0]
+    assert graph['3']['inputs']['model'] == ['_spe_addon_light-blend', 0]
+    assert graph['7']['inputs']['prompt'] == item['prompt'] == models.CATALOG['addons']['light-blend']['prompt'] + ' ' + prompt
+    assert item['user_prompt'] == prompt and item['params']['resolution'] == 768
+    assert item['seed'] == 84001916 and item['addons'][0]['id'] == 'light-blend'
+    from smart_photo_edit.history import image_metadata
+    exported = image_metadata(await (await env.http.get(item['url'])).read())
+    assert exported['prompt'] == item['prompt'] and exported['reference'] == item['reference']
 
 
 async def test_prompt_job_review_errors_cancel_and_busy_guard(make_env, monkeypatch):

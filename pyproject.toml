@@ -20,7 +20,7 @@ smart-photo-edit = "smart_photo_edit.cli:main"
 include = ["smart_photo_edit*"]
 
 [tool.setuptools.package-data]
-smart_photo_edit = ["web/*", "builtin_workflows/*.json", "model_data/*.json", "engine_nodes/*.py"]
+smart_photo_edit = ["web/*", "builtin_workflows/*.json", "model_data/*.json", "engine_nodes/*.py", "engine_nodes/*LICENSE.txt"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

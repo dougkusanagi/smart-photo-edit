@@ -1,13 +1,17 @@
 @echo off
-rem Cria o ambiente na primeira vez e inicia o app. Uso: run.bat [--port 8765] [--no-browser]
+setlocal
 cd /d "%~dp0"
-if not exist ".venv\Scripts\python.exe" (
-  echo Criando ambiente Python (.venv)...
-  py -3 -m venv .venv || python -m venv .venv || goto :fail
-  ".venv\Scripts\python.exe" -m pip install -e . || goto :fail
-)
+if not exist ".venv\Scripts\python.exe" goto :install
+".venv\Scripts\python.exe" -c "import aiohttp, PIL, smart_photo_edit" >nul 2>nul
+if not errorlevel 1 goto :run
+:install
+call install.bat
+if errorlevel 1 exit /b 1
+:run
 ".venv\Scripts\python.exe" -m smart_photo_edit %*
-exit /b %errorlevel%
+if errorlevel 1 goto :fail
+exit /b 0
 :fail
-echo Falha ao preparar o ambiente. Instale o Python 3.10+ em python.org e tente de novo.
+echo Falha ao iniciar. Confira a mensagem acima.
+pause
 exit /b 1

@@ -135,9 +135,29 @@ class ComfyClient:
     ) -> list[OutputImage]:
         """Enfileira o grafo e espera terminar. Progresso por WebSocket (opcional); término por /history."""
         total_nodes = max(1, len(graph))
-        state = {"done": 0, "sampling": False, "p": 0.0}
-        # só o progresso dos samplers vale como "passo"; codificadores e VAE também emitem `progress`
+        state = {"done": 0, "sampling": False, "p": 0.0, "phase": "Carregando modelos"}
+        # Samplers contam passos e upscale conta blocos; encoders e VAE também emitem `progress`.
         samplers = {nid for nid, n in graph.items() if "Sampler" in n["class_type"] and n["class_type"] != "KSamplerSelect"}
+        upscalers = {nid for nid, n in graph.items() if n['class_type'] == 'SPEOneStepUpscale'}
+        seedvr = any(n['class_type'] == 'SeedVR2Conditioning' for n in graph.values())
+
+        def node_phase(node_id: str) -> str:
+            node = graph.get(node_id, {})
+            if node.get('class_type') == 'SPEOneStepUpscale':
+                return 'Reconstruindo detalhes por difusão'
+            if node.get('class_type') in ('SeedVR2Preprocess', 'VAEEncodeTiled'):
+                return 'Codificando a foto'
+            if node.get('class_type') in ('SeedVR2Conditioning', 'KSampler') and seedvr:
+                return 'Reconstruindo detalhes por difusão'
+            if node.get('class_type') in ('VAEDecodeTiled', 'SeedVR2PostProcessing'):
+                return 'Finalizando imagem'
+            if node.get('class_type') == 'TextEncodeQwenImage21':
+                clip = node['inputs'].get('clip', [])
+                cpu = bool(clip) and graph.get(str(clip[0]), {}).get('inputs', {}).get('device') == 'cpu'
+                return 'Preparando imagens e instrução' + (' na CPU' if cpu else '')
+            if node.get('class_type') == 'VAEDecode':
+                return 'Finalizando imagem'
+            return 'Carregando modelos'
 
         async def emit(p: float, phase: str) -> None:
             state["p"] = max(state["p"], min(1.0, p))
@@ -166,15 +186,26 @@ class ComfyClient:
                         kind = ev.get("type")
                         if kind in ("executing", "execution_cached"):
                             state["done"] += len(data.get("nodes", [])) if kind == "execution_cached" else (1 if data.get("node") else 0)
-                            if not state["sampling"]:
-                                await emit(0.18 * min(1.0, state["done"] / total_nodes), "Carregando modelos")
+                            if kind == 'executing' and data.get('node'):
+                                state['phase'] = node_phase(str(data['node']))
+                            if state['phase'] == 'Finalizando imagem':
+                                await emit(0.96, state['phase'])
+                            elif not state["sampling"]:
+                                await emit(0.18 * min(1.0, state["done"] / total_nodes), state['phase'])
                         elif kind == "progress":
                             value, mx = data.get("value", 0), max(1, data.get("max", 1))
-                            if str(data.get("node")) in samplers:
+                            if str(data.get('node')) in upscalers:
+                                state['sampling'] = True
+                                blocks = max(1, mx // 3)
+                                block, step = min(blocks, value // 3 + 1), int(value) % 3
+                                phase = ('Preparando', 'Reconstruindo', 'Finalizando')[step]
+                                phase = f'{phase} · bloco {block}/{blocks}' if value < mx else f'Montando ampliação · {blocks}/{blocks} blocos'
+                                await emit(0.18 + 0.74 * value / mx, phase)
+                            elif str(data.get("node")) in samplers:
                                 state["sampling"] = True
-                                await emit(0.18 + 0.74 * value / mx, f"Gerando · passo {value}/{mx}")
+                                await emit(0.18 + 0.74 * value / mx, ('Reconstruindo detalhes' if seedvr else 'Gerando') + f" · passo {value}/{mx}")
                             elif not state["sampling"]:
-                                await emit(0.18 * min(1.0, (state["done"] + value / mx) / total_nodes), "Preparando")
+                                await emit(0.18 * min(1.0, (state["done"] + value / mx) / total_nodes), node_phase(str(data.get('node'))))
             except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
                 return  # sem WebSocket: segue só com /history, só perde o progresso fino
 

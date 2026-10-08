@@ -1,19 +1,27 @@
-No Windows:
+INSTALAR NO WINDOWS
 
-1. Extraia o ZIP.
-2. Com `uv` instalado, abra o PowerShell na pasta extraída.
-3. Execute:
+1. Instale Python 3.12 ou 3.13 com pip e venv (python.org).
+   Marque a opção de adicionar Python ao PATH.
+2. Extraia o ZIP completo e abra a pasta smart-photo-edit.
+3. Execute install.bat para instalar o ambiente privado.
+4. Execute run.bat para abrir o app no navegador.
+   run.bat também instala automaticamente se o ambiente estiver incompleto.
+5. Para atualizar, feche o app e execute update.bat.
+   Por ZIP, o código vem da versão main pública no GitHub, sem exigir Git.
+   Ele substitui os arquivos do aplicativo: copie antes suas alterações manuais.
+   Em clones Git, usa pull --ff-only e recusa alterações locais.
+   Modelos, fotos, configurações e histórico são preservados.
 
-```powershell
-uv venv --python 3.12
-uv pip install -e .
-.\run.bat
-```
+É necessário um driver de GPU compatível, internet no primeiro preparo e
+espaço para o motor e os modelos. Eles são baixados na máquina de destino;
+o ZIP não inclui Python, drivers, ambientes virtuais, pesos ou fotos.
 
-O app abrirá no navegador. O motor e os modelos serão instalados no primeiro preparo, com internet.
+A GTX 1660 Ti de 6 GB ainda não tem inferência validada neste app.
+Consulte README.md para perfis de memória, upscale e limitações.
 
-Para preparar antecipadamente:
-
-```powershell
+Para preparar o workflow selecionado antecipadamente, abra o terminal na pasta:
 .\.venv\Scripts\python.exe -m smart_photo_edit setup
-```
+
+PARA GERAR OUTRO ZIP
+py -3 scripts\build_zip.py
+Saída: dist\smart-photo-edit.zip

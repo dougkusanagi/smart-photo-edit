@@ -183,3 +183,46 @@ async def test_managed_mode_ignores_old_external_configuration(tmp_path):
         assert 'cdn.tailwindcss.com' not in html and '@apply' not in html
     finally:
         await client.close()
+
+
+def test_inference_library_is_pinned_namespaced_and_reused(monkeypatch, tmp_path):
+    import io
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, 'w') as z:
+        z.writestr('repo/models/unet.py', 'from ldm.util import fn\nfrom .ops import x\n')
+        z.writestr('repo/ldm/util.py', 'def fn(): pass\n')
+        z.writestr('repo/LICENSE', 'License text')
+        z.writestr('repo/train.py', 'training code')
+    content = archive.getvalue()
+    wf = workflow()
+    wf.requires = {'libraries': [{'name': 'sinsr', 'revision': 'pinned', 'namespace': 'spe_sinsr',
+                    'url': 'https://test/library.zip', 'sha256': hashlib.sha256(content).hexdigest(),
+                    'include': ['models', 'ldm', 'LICENSE']}], 'engine_packages': ['timm==1.0.30']}
+    download = Mock(side_effect=lambda url, dest, progress: dest.write_bytes(content))
+    monkeypatch.setattr(installer, 'download', download)
+    assert installer.install_extensions(wf, tmp_path) == ['timm==1.0.30']
+    root = tmp_path / 'spe_libraries/sinsr'
+    assert 'from spe_sinsr.ldm.util' in (root / 'models/unet.py').read_text()
+    assert 'from .ops import x' in (root / 'models/unet.py').read_text()
+    assert (root / 'LICENSE').read_text() == 'License text'
+    assert not (root / 'train.py').exists()
+    installer.install_extensions(wf, tmp_path)
+    assert download.call_count == 1
+
+
+@pytest.mark.parametrize('bad_hash,escape', [(True, False), (False, True)])
+def test_inference_library_rejects_corrupt_and_unsafe_archive(monkeypatch, tmp_path, bad_hash, escape):
+    import io
+    archive = io.BytesIO()
+    with zipfile.ZipFile(archive, 'w') as z:
+        z.writestr('../../outside.py' if escape else 'repo/LICENSE', 'content')
+    content = archive.getvalue()
+    wf = workflow()
+    wf.requires = {'libraries': [{'name': 'sinsr', 'revision': 'pinned', 'namespace': 'spe_sinsr',
+                   'url': 'https://test/library.zip',
+                   'sha256': 'wrong' if bad_hash else hashlib.sha256(content).hexdigest(),
+                   'include': ['LICENSE']}]}
+    monkeypatch.setattr(installer, 'download', lambda url, dest, progress: dest.write_bytes(content))
+    with pytest.raises(ValueError, match='corrompido|caminho inválido'):
+        installer.install_extensions(wf, tmp_path)
+    assert not (tmp_path / 'spe_libraries/sinsr').exists()

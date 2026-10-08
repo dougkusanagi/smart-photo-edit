@@ -17,3 +17,11 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
+      - name: Test Windows launcher and installation
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: run.bat --help
+      - name: Test Unix launcher and installation
+        if: runner.os != 'Windows'
+        shell: bash
+        run: bash run.sh --help

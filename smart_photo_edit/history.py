@@ -24,7 +24,7 @@ def image_metadata(data: bytes) -> dict | None:
             return None
     if not isinstance(record, dict) or not isinstance(record.get('prompt'), str):
         return None
-    return {key: record[key] for key in ('prompt', 'seed', 'name', 'workflow', 'params', 'created_at', 'duration_seconds', 'addons', 'user_prompt', 'mode', 'models', 'model_choices', 'runtime_args', 'reference', 'negative', 'strength', 'variation', 'variations') if key in record}
+    return {key: record[key] for key in ('prompt', 'seed', 'name', 'workflow', 'params', 'created_at', 'duration_seconds', 'addons', 'user_prompt', 'mode', 'models', 'model_choices', 'runtime_args', 'reference', 'negative', 'strength', 'variation', 'variations', 'upscale') if key in record}
 
 
 class ResultStore:

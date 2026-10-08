@@ -20,7 +20,7 @@ from .prompt_limits import MAX_PROMPT_CHARS, PromptLimitError, validate_prompt
 from .launcher import ComfyLauncher
 from .runtime import ManagedRuntime
 from .service import EditRequest, ResultStore, run_edit, sniff_image
-from . import background
+from . import background, upscale
 from .workflows import WorkflowError
 
 log = logging.getLogger("smart_photo_edit")
@@ -114,6 +114,12 @@ async def status(request: web.Request) -> web.Response:
         },
         "workflow": wf_info,
     })
+
+
+async def list_upscale_models(request: web.Request) -> web.Response:
+    state = request.app[STATE_KEY]
+    models_dir = state.runtime.source / 'models' if state.settings.engine_mode == 'managed' else None
+    return web.json_response({'models': upscale.catalog(models_dir), 'default': upscale.DEFAULT_MODEL})
 
 
 async def list_workflows(request: web.Request) -> web.Response:
@@ -289,33 +295,47 @@ async def edit(request: web.Request) -> web.StreamResponse:
     if not kind:
         return json_error("Formato de imagem não suportado. Use PNG, JPG ou WebP.", 415, "unsupported_media")
     try:
+        if not isinstance(options, dict):
+            raise ValueError('opções precisam ser um objeto')
         addons = options.get("addons") or []
         if not isinstance(addons, list) or not all(isinstance(a, str) for a in addons) or len(addons) > 3:
             raise ValueError("complementos inválidos")
         if addons and options.get("mode", "edit") == "edit" and state.settings.engine_mode != "managed":
             return json_error("LoRAs adicionais exigem o motor local gerenciado pelo app.", 400, "addon_unsupported")
         mode = options.get("mode", "edit")
-        if mode not in ("edit", background.MODE):
+        if mode not in ("edit", background.MODE, upscale.MODE):
             raise ValueError("modo inválido")
+        upscale_params = None
         if mode == background.MODE:
             addons, reference = [], None
             wf = background.workflow()
+        elif mode == upscale.MODE:
+            if state.settings.engine_mode != 'managed':
+                return json_error('Upscale exige o motor local gerenciado pelo app.', 400, 'upscale_unsupported')
+            upscale_model = upscale.validate_model(options.get('upscale_model', upscale.DEFAULT_MODEL))
+            scale = upscale.validate_scale(options.get('scale', 2))
+            upscale_seed = upscale.validate_seed(options.get('upscale_seed', 0))
+            await asyncio.to_thread(upscale.dimensions, image, scale, upscale_model)
+            addons, reference = [], None
+            wf = upscale.workflow(upscale_model)
+            upscale_params = {'scale': scale}
         else:
             wf = current_workflow(state, addons)
         req = EditRequest(
             image=image,
             filename=f"spe_{wf.id}.{kind[1]}",
             content_type=kind[0],
-            prompt=background.LABEL if mode == background.MODE else str(options.get("prompt", "")),
+            prompt=(background.LABEL if mode == background.MODE else upscale.prompt(upscale_model) if mode == upscale.MODE else str(options.get("prompt", ""))),
             mode=mode,
             reference=reference, reference_filename=reference_filename,
             source_name=str(options.get("name", "Sem título")),
             source_result=options.get("source_result") if isinstance(options.get("source_result"), str) else None,
-            negative=str(options.get("negative", "")),
-            seed=int(options["seed"]) if options.get("seed") not in (None, "") else None,
-            n=int(options.get("n", 1)),
-            strength=float(options["strength"]) if options.get("strength") is not None else None,
-            params=None if mode == background.MODE else state.settings.workflow_params.get(wf.id),
+            negative='' if mode == upscale.MODE else str(options.get("negative", "")),
+            seed=(upscale_seed if mode == upscale.MODE else
+                  int(options["seed"]) if options.get("seed") not in (None, "") else None),
+            n=1 if mode == upscale.MODE else int(options.get("n", 1)),
+            strength=None if mode == upscale.MODE else float(options["strength"]) if options.get("strength") is not None else None,
+            params=upscale_params if mode == upscale.MODE else None if mode == background.MODE else state.settings.workflow_params.get(wf.id),
             addons=tuple(addons),
             prompt_prefix=' '.join(models.CATALOG['addons'][a]['prompt'] for a in dict.fromkeys(addons)),
         )
@@ -519,6 +539,7 @@ def create_app(state: AppState) -> web.Application:
         web.static("/assets/", paths.WEB_DIR),
         web.get("/api/status", status),
         web.get("/api/workflows", list_workflows),
+        web.get('/api/upscale/models', list_upscale_models),
         web.post("/api/workflows/import", import_workflow),
         web.delete("/api/workflows/{id}", delete_workflow),
         web.get("/api/workflows/{id}/check", check_workflow),

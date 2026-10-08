@@ -27,14 +27,22 @@ O aplicativo também mantém o prompt associado a cada edição, metadados no PN
 **Linux / macOS**
 
 ```bash
-./run.sh                 # cria .venv na primeira vez e abre o app em http://127.0.0.1:8765
+./install.sh             # instala ou repara o ambiente do aplicativo
+./run.sh                 # abre o app em http://127.0.0.1:8765
+./update.sh              # com o app fechado, atualiza código e dependências
 ```
 
 **Windows**
 
 ```bat
+install.bat
 run.bat
+update.bat
 ```
+
+`run` instala automaticamente se o ambiente estiver ausente ou incompleto. `install` prepara apenas o aplicativo; o motor de IA e os modelos são preparados na interface. No Linux/macOS, `SPE_PYTHON=python3.12 ./install.sh` permite escolher o Python do ambiente novo. No Windows, os scripts usam `py -3` ou `python`.
+
+Feche o aplicativo antes de executar `update`. Em um clone Git, ele usa `git pull --ff-only` e recusa alterações locais para evitar sobrescrevê-las. Em uma instalação extraída do ZIP, baixa a versão atual de `main` no [GitHub](https://github.com/dougkusanagi/smart-photo-edit) e substitui os arquivos do aplicativo; alterações manuais nesses arquivos devem ser copiadas antes. Ambos reinstalam as dependências do servidor, preservam a `.venv` e os dados pessoais e deixam o preparo do motor/modelos a cargo do app. O modo ZIP não exige Git.
 
 No PowerShell, use `./run.bat`. Copie ou extraia a pasta completa do projeto, instale Python 3.12 ou 3.13 com `pip`/`venv` e deixe o comando `py` ou `python` disponível. Não copie a `.venv` de uma instalação Linux: o script cria o ambiente do Windows na primeira execução. Também são necessários driver de GPU compatível, internet para preparar dependências/modelos e espaço em disco. O download dos modelos ocorre ao preparar o motor ou na primeira edição.
 
@@ -42,6 +50,18 @@ O script é o inicializador do projeto, não um executável que inclui Python e 
 
 
 Ou, manualmente: `pip install -e .` e `python -m smart_photo_edit` (opções: `--port`, `--no-browser`, `--comfy-url`).
+
+### Gerar o ZIP para outra máquina
+
+Execute na pasta do projeto, com Python instalado (não precisa ativar a `.venv`):
+
+```bash
+python3 scripts/build_zip.py             # Linux / macOS
+```
+
+No Windows: `py -3 scripts\build_zip.py`. O pacote sai em **`dist/smart-photo-edit.zip`**; para outro destino, use `--output /caminho/pacote.zip`. O script usa somente a biblioteca padrão, verifica a integridade e imprime o SHA-256. Inclui os arquivos atuais do app, inclusive alterações ainda não commitadas, interface compilada, workflows, catálogos, licenças, inicializadores e o próprio script. Não inclui `.venv`, Git, caches, testes, pesos, configurações pessoais ou histórico.
+
+Na outra máquina, extraia o ZIP completo e execute `run.bat` no Windows ou `bash run.sh` no Linux/macOS, dentro da pasta `smart-photo-edit`. A instalação cria um ambiente novo e baixa as dependências e modelos necessários. Python e drivers precisam estar instalados; este ZIP é um pacote de código para instalação, não um executável nem uma instalação offline com modelos.
 
 ### Teste na GTX 1660 Ti de 6 GB
 
@@ -63,6 +83,50 @@ O motor privado usa ComfyUI **v0.37.4**, dentro de `<pasta de dados>/engine/`, c
 ### Integração externa opcional
 
 Para desenvolvimento ou uma instalação existente, ative explicitamente com `--comfy-url` ou `SPE_COMFY_URL`. O uso normal não precisa dessa opção. O comando antigo `setup --comfyui-dir /caminho/ComfyUI` continua disponível para esse modo.
+
+Em **Ajustes avançados → Notificar ao concluir**, você pode ativar ou desativar avisos do sistema ao terminar uma edição, upscale ou lote de remoção de fundos. A opção vem ligada; o navegador solicita permissão na primeira operação. Lotes geram um único aviso com a quantidade de fotos prontas e erros, sem avisos por foto ou ao cancelar. O app precisa permanecer aberto em uma aba; o recurso depende do suporte do navegador e das permissões do site/sistema.
+
+## Upscale generativo
+
+A aba **Upscale**, no topo (`Alt+3`), amplia a foto em **2× ou 4×** e permite selecionar o modelo para comparar resultados. A opção **Comparar usando o original** vem ligada: cada execução parte do mesmo original, mesmo quando outra ampliação está selecionada. Desmarque para ampliar a versão atual. A seleção do modelo fica salva neste navegador.
+
+| Modelo | Pesos em disco | Inferência |
+| --- | --- | --- |
+| **SeedVR2 3B** (padrão, experimental) | 3,89 GB | Restauração em um passo na resolução escolhida, sem texto. Pesos FP8, VAE FP16 e nós nativos do ComfyUI. Saída até 8 MP. |
+| **AdcSR** (experimental) | 2,16 GB | Rede SD 2.1 comprimida, sem encoder de texto nem encoder VAE. FP32, determinístico, 4× nativo; 2× reduz cada bloco. Saída até 32 MP. |
+| **SinSR v1** (experimental) | 699 MB | Difusão dedicada em um passo, sem texto, 4× nativo; 2× reduz cada bloco. Saída até 32 MP. Uso não comercial. |
+
+**SD 1.5 + ControlNet Tile e PiSA-SR foram substituídos no catálogo.** O SD 1.5 fazia 16 passos por bloco, com VAE na CPU; o PiSA-SR exigia SD 2.1 completo e encoder de texto. As opções atuais usam inferência de um passo e não recebem prompt nem controle Suave/Equilibrada/Forte. Resultados antigos continuam no histórico com seus metadados; os pesos antigos não são apagados automaticamente.
+
+Ao selecionar uma opção, a interface mostra o estado dos pesos e o tamanho do download. **Ampliar** prepara somente o modelo escolhido. Trocar de opção reinicia o motor quando necessário, preservando os pesos baixados. Todas funcionam offline após o preparo e nenhuma precisa baixar Qwen. O ambiente privado ComfyUI/PyTorch/CUDA exige vários GB adicionais; SinSR acrescenta `timm==1.0.30` e ~34 MB de biblioteca, AdcSR acrescenta `diffusers==0.41.0`. Revisões, tamanhos e SHA-256 ficam fixados no catálogo.
+
+O painel mostra percentual, fase e tempo decorrido. **Parar** cancela a inferência; durante o preparo inicial, o preparo continua para o próximo uso. O percentual acompanha o trabalho concluído e não prevê exatamente o tempo restante. O resultado permite comparar, desfazer, exportar PNG e reabrir pelo histórico. Desfazer mantém o histórico. Transparência, perfil de cor e original são preservados; o PNG e o histórico registram modelo, semente, escala e política de execução. Detalhes ausentes são estimados: rostos, letras e texturas podem mudar. A preferência por SeedVR2 veio de uma inspeção visual limitada de uma foto degradada, sem demonstrar superioridade universal nem recuperar detalhes verdadeiros.
+
+A API aceita `upscale_model` (`seedvr2`, `adcsr`, `sinsr`), `upscale_seed` e `scale` (2 ou 4). O padrão é SeedVR2 e a semente padrão é 0; AdcSR é determinístico. `reconstruction` foi retirado. `GET /api/upscale/models` informa tamanhos, licenças, limites de saída e estado dos pesos. Entradas que excedem o limite de saída são recusadas antes do preparo, sem redução silenciosa. O modo exige o motor gerenciado pelo app.
+
+**SeedVR2:** [modelo da ByteDance](https://huggingface.co/ByteDance-Seed/SeedVR2-3B), licença Apache 2.0, com [pesos convertidos pela Comfy-Org](https://huggingface.co/Comfy-Org/SeedVR2/tree/df48879708206a403d2a61acd55578c2e80fd233). O grafo usa redimensionamento Lanczos, pré-processamento SeedVR2, VAE em blocos de 512 px (sobreposição 128), um passo Euler/CFG 1 e correção de cor Lab. O ComfyUI escolhe a precisão de cálculo e gerencia offload em pouca VRAM; FP8 descreve os pesos em disco, não garante operações FP8 nativas na GTX 1660 Ti. O VAE em blocos não divide a difusão inteira: fotos grandes ainda podem esgotar a memória. O limite de 8 MP é uma proteção, não uma garantia de caber em 6 GB.
+
+**AdcSR:** implementação adaptada da [rede do autor](https://github.com/Guaishou74851/AdcSR), com UNet SD 2.1 podado em 25% dos canais, sem texto, embedding de tempo ou encoder do VAE, e meio decodificador. Pesos Apache 2.0 e configuração da base SD 2.1 OpenRAIL++. Carregamento em dispositivo `meta` evita inicializar uma segunda cópia de GB de pesos na RAM. O checkpoint Lightning é lido com `weights_only=True`, ignorando callbacks inertes sem importar o pacote do autor. Usa FP32, blocos iniciais de 192 px da entrada, contexto e sobreposição de 32 px, redução para 128/64 px em OOM e alinhamento global de cor AdaIN. CPU e GPU seguem o dispositivo escolhido pelo motor.
+
+**SinSR:** [arquitetura do autor](https://github.com/wyf0912/SinSR), revisão `f1735490e980162435391162ddd18c0642327c5b`, isolada em namespace próprio; licença CC BY-NC-SA 4.0. Mantém UNet FP32, ruído compartilhado na CPU, blocos de 128 px com contexto e sobreposição de 32 px. O VAE usa CUDA FP16, repete em FP32 se produzir valores não finitos e tenta blocos de 64 px antes de passar para CPU em OOM. Atenção por consultas e distâncias do codebook VQ usam fatias FP32 de até 32 MiB, preservando todos os códigos e chaves. A atenção densa anterior chegava a ~12,6 GiB de RAM; a atenção fatiada por `bmm`/softmax evita esses buffers. Não retire essa proteção com base em ensaios de imagens pequenas.
+
+As três opções desativam o cache de nós (`--cache-none`). AdcSR e SinSR limitam CPU a quatro threads durante a execução, restauram a configuração anterior e soltam modelos e referências temporárias ao terminar, inclusive em erro/cancelamento. A montagem fica na CPU. O PNG intermediário usa compressão mínima para reduzir o custo de recompressão ao salvar com metadados.
+
+### Medições e limites
+
+Ensaios em **7/10/2026, Linux, RTX 5060 Ti 16 GB, driver 595.91.07, 32 GB de RAM, ComfyUI v0.37.4, PyTorch 2.14.1+cu130**, uma foto RGB, sem referência, semente 0. Esses resultados **não validam GTX 1660 Ti de 6 GB nem Windows**.
+
+Pela API real do app, incluindo preparo local/reinício quando necessário e gravação no histórico, com pesos já baixados: AdcSR **256 × 256 → 512 × 512: 5,3 s**, **512 × 512 → 1024 × 1024: 13,3 s**; SinSR **256 × 256 → 512 × 512: 13,8 s**; SeedVR2 **256 × 256 → 512 × 512: 7,1 s** e **512 × 512 → 2048 × 2048: 19,4 s**. Os casos incluem custos diferentes de reinício e não representam um ranking rigoroso de velocidade. Todas as resoluções dos PNGs foram conferidas.
+
+Ensaio isolado anterior do SeedVR2, allocator e memória livre reportada ao ComfyUI limitados artificialmente a **5 GiB**, pesos FP8 e VAE em blocos: entrada/saída **256/512 px: 3,2 s**, **512/1024 px: 10,0 s**, **1024/2048 px: 25,0 s**, **1500/3000 px: 53,0 s**, com picos CUDA alocados entre **3.188 e 3.967 MiB**. Entrada **2000 × 2000 → 4000 × 4000** falhou por OOM; por isso o catálogo restringe a saída a 8 MP. Tempos excluem app, download e gravação no histórico, incluem a execução do grafo; reutilização de pesos pode reduzir carregamento. Limitar o allocator não reproduz a arquitetura, o desktop ou a velocidade da GTX.
+
+AdcSR, nó atual em **três execuções no mesmo processo**, allocator limitado a 5 GiB, entrada **512 × 512**, saída **1024 × 1024**, incluindo carregar pesos e montar os blocos: **10,01 / 8,37 / 7,87 s**. Pico CUDA **3.841 MiB alocados / 5.092 MiB reservados**, **32 MiB alocados após cada execução**; pico de RAM residente **3.441 MiB**, RAM após cada execução **1.722 / 3.076 / 3.076 MiB**. A reserva pertence ao allocator e não equivale a memória viva dos tensores. O orçamento artificial não inclui todo o consumo do driver/desktop.
+
+SinSR, mesmo ensaio repetido com entrada **512 × 512 → 1024 × 1024**, allocator de 5 GiB: **21,18 / 20,05 / 19,91 s**, pico CUDA **1.831 MiB alocados / 3.096 MiB reservados**, **32 MiB alocados após execução**, pico RAM **3.092 MiB**, RAM final **2.544 / 2.544 / 2.952 MiB**. Esses blocos exercitam o VAE até 192 px de entrada. A estabilidade em três execuções não demonstra ausência de vazamentos em todos os fluxos.
+
+Otimização anterior de SinSR: a atenção fatiada por matmul reduziu **192 × 192 → 2× de 10,5 para 5,3 s** e **384 × 384 → 2× de 35,0 para 14,4 s**, com saídas equivalentes às anteriores (PSNR 69 dB). São diferenças de arredondamento da implementação, não uma métrica de qualidade contra a foto original.
+
+**GTX 1660 Ti de 6 GB / Windows: validação pendente.** O AdcSR FP32 é o primeiro candidato a testar nesse equipamento por evitar precisão reduzida e modelos auxiliares. Registre GPU, driver, versões, RAM, modelo, resolução de entrada/saída, escala, duração e pico de VRAM total/do processo antes de declarar suporte. Os testes automatizados usam motor falso e testes numéricos opcionais com PyTorch; não comprovam qualidade fotográfica ou compatibilidade de VRAM. Verificação no Chromium: catálogo/seleção dos três modelos, geração AdcSR 128 × 128 → 512 × 512, progresso, exportação PNG com metadados, comparação, reabertura pelo histórico e cancelamento. Painel conferido em desktop 1440 × 900 e celular 390 × 844, sem rolagem horizontal nem erros JavaScript. O navegador integrado T3 foi bloqueado pelo AppArmor; a verificação usou Chromium headless local. Reinicie o app para carregar o catálogo e os nós atualizados.
 
 ## Modelos menores e GPU de 6 GB
 
@@ -169,6 +233,12 @@ A LoRA é baixada na primeira vez e aplicada em tempo de execução por um nó e
 Nos workflows embutidos Base e Viggle Turbo, **Adicionar referência** anexa uma segunda foto como miniatura removível acima do prompt; clicar nela insere `<image2>` no cursor. Use `<image1>` para a imagem a editar e `<image2>` para a referência. Exemplo: `Coloque na pessoa de <image1> o boné branco de <image2>, preservando sua cor, formato e detalhes.` O prompt é enviado sem instruções automáticas de fundo ou objeto. Workflows importados não recebem esse recurso automaticamente.
 
 A referência reutiliza os mesmos modelos, mas acrescenta processamento e memória. Comece com resolução moderada e uma variação; a execução com duas fotos na GTX 1660 Ti de 6 GB ainda precisa de medição real. Os metadados guardam o prompt efetivamente enviado, o texto original e a tag, nome e hash da referência. A foto de referência não é arquivada no histórico: para reutilizá-la depois, selecione o arquivo novamente.
+
+Para substituir uma pessoa pela referência, comece sem a LoRA **Integrar luz e sombra**, que foi treinada para objetos e produtos e não garante transferência de identidade. Exemplo: `Substitua completamente a pessoa de <image1> pela pessoa de <image2>, preservando a identidade, cabelo, roupas e acessórios da referência. Preserve o cenário e o enquadramento de <image1>; ajuste escala, perspectiva, iluminação e sombras de contato da nova pessoa para integrá-la à cena. Não mantenha a pessoa original.` O apoio da LoRA prioriza a edição solicitada antes da harmonização, mas a combinação continua experimental.
+
+O painel de perfis mostra a **resolução atual**, inclusive quando ela foi alterada em Geração. Se ela diferir do padrão do perfil (1024 no Original, 768 no Compacto/Mínimo), o botão **Usar … px do perfil** restaura apenas a resolução. O encoder na CPU e duas referências em resolução alta podem levar vários minutos mesmo com seis passos; baixar a resolução reduz o trabalho, sem garantir um tempo específico ou o sucesso da edição.
+
+Validação de um caso de substituição em 7/10/2026: Linux, RTX 5060 Ti de 16 GB, driver 595.91.07, 32 GB de RAM, ComfyUI 0.37.4 e PyTorch 2.14.1+cu130; duas imagens, resolução 768 e semente 84001916. Turbo Compacto (GGUF Q4_K_M, encoder W4A8 na CPU), sem LoRA adicional, levou 150,3 s e manteve parte da roupa original. Base Original (imagem/encoder INT8, encoder automático na GPU, 25 passos), com uma instrução que explicitava retirar mochila/saia e inserir o top, calça e pose da referência, levou 28,7 s e realizou a substituição visual, com identidade facial aproximada. Os prompts e os perfis diferem: esses tempos são medições desse caso, não um comparativo isolado dos modelos. Pico de VRAM não medido; o teste não valida execução em 6 GB. O progresso agora distingue preparação das imagens/instrução (indicando CPU quando configurada) e finalização da imagem.
 
 ## Histórico e prompt de cada edição
 

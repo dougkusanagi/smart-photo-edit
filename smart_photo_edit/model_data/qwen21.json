@@ -206,8 +206,8 @@
   "addons": {
     "light-blend": {
       "label": "Integrar luz e sombra",
-      "description": "Uniformiza a iluminação do objeto ou produto, realça brilhos, define frente e fundo, cria sombra de contato natural e o funde ao cenário. Treinada para objetos e produtos; com pessoas é experimental.",
-      "prompt": "pengyu Apply consistent lighting to the product or object, enhance specular highlights, front-back spatial relationship, add natural contact shadow, and blend it seamlessly into the background.",
+      "description": "Harmoniza iluminação e sombras de contato após a edição solicitada. Treinada para objetos e produtos; não é uma LoRA de troca de pessoas ou identidade. Para substituir uma pessoa pela referência, teste primeiro sem este complemento.",
+      "prompt": "pengyu Follow the user's edit instruction below first, including any requested replacement and use of reference images. Then blend the edited subject into the scene with consistent lighting and natural contact shadows. Preserve the scene lighting when requested. Do not replace the requested edit with a lighting-only adjustment.",
       "strength": 1.0,
       "source": "https://huggingface.co/RunningHubAI/rh-qwen-image-2.1-lora-2104918997757157378",
       "license": "Publicada pela RunningHub em nome do autor; os direitos permanecem com o criador. Siga a licença do projeto original.",
